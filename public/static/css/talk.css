@@ -1,0 +1,192 @@
+.talk {
+  max-width: 820px;
+  padding-top: clamp(28px, 5vw, 56px);
+  padding-bottom: 64px;
+}
+
+.talk-intro h1 { font-size: var(--t-2xl); }
+
+.talk-intro p {
+  margin-top: 10px;
+  color: var(--ink-2);
+  max-width: 36rem;
+}
+
+/* ------------------------------------------------------------ call card */
+
+.callcard {
+  margin-top: 28px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 20px clamp(16px, 3.5vw, 32px) 26px;
+  box-shadow: 6px 8px 0 -1px var(--paper-deep), 6px 8px 0 0 var(--rule);
+}
+
+.callcard-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1.5px solid var(--ink);
+}
+
+.who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+.who-avatar {
+  width: 44px; height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-family: var(--serif);
+  font-size: 1.375rem;
+  color: var(--sheet);
+  background: var(--stamp);
+}
+
+.who-name { font-family: var(--serif); font-size: var(--t-lg); line-height: 1.1; }
+.who-role { font-size: var(--t-sm); color: var(--ink-3); }
+
+.callcard-right { display: flex; align-items: center; gap: 12px; }
+
+.clock {
+  font-size: var(--t-md);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+
+.callcard:not([data-state="idle"]):not([data-state="ended"]) .clock { color: var(--ink); }
+
+/* ---------------------------------------------------------------- voice */
+
+.voice { padding: 26px 0 8px; text-align: center; }
+
+.wave {
+  width: 100%;
+  height: 120px;
+}
+
+.status {
+  margin-top: 14px;
+  font-family: var(--serif);
+  font-size: var(--t-xl);
+  line-height: 1.2;
+}
+
+.status-hint {
+  margin-top: 6px;
+  min-height: 1.55em;
+  font-size: var(--t-sm);
+  color: var(--ink-3);
+}
+
+.callcard[data-state="error"] .status { color: var(--no); }
+
+/* ---------------------------------------------------------------- setup */
+
+.setup {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.field { display: grid; gap: 6px; font-size: var(--t-sm); color: var(--ink-2); text-align: left; }
+.field em { font-style: normal; color: var(--ink-3); }
+
+.field input,
+.typebox input {
+  height: 48px;
+  min-width: 0;
+  width: 240px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: var(--t-md);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+}
+
+.field input:focus,
+.typebox input:focus { outline: none; border-color: var(--stamp); box-shadow: 0 0 0 3px var(--stamp-soft); }
+
+.btn-call { min-width: 180px; }
+
+/* ------------------------------------------------------------- controls */
+
+.controls {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.typebox {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.typebox input { flex: 1; width: auto; }
+
+/* ---------------------------------------------------------------- ended */
+
+.ended {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.ended-stamp { font-size: 1.5rem; min-height: 3rem; display: grid; place-items: center; }
+.ended-stamp .stamp { animation: stamp-land 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.25) both; }
+.ended-stamp .stamp.is-interested { color: var(--ok); }
+.ended-stamp .stamp.is-callback { color: var(--wait); }
+.ended-stamp .stamp.is-not_interested { color: var(--no); }
+.ended-stamp .stamp.is-unknown { color: var(--none); }
+
+.ended-line { color: var(--ink-2); max-width: 30rem; }
+
+.ended-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+
+@keyframes stamp-land {
+  0%   { opacity: 0; transform: scale(1.9) rotate(-4deg); }
+  60%  { opacity: 1; transform: scale(0.96) rotate(-8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-8deg); }
+}
+
+.tip {
+  margin-top: 22px;
+  font-size: var(--t-sm);
+  color: var(--ink-3);
+}
+
+/* ----------------------------------------------------------- transcript */
+
+.live {
+  margin-top: 40px;
+  border-top: 1px solid var(--rule);
+  padding-top: 24px;
+}
+
+.live h2 { font-size: var(--t-lg); margin-bottom: 18px; }
+
+.live-empty { color: var(--ink-3); font-size: var(--t-sm); }
+
+.live .script dd.is-pending { color: var(--ink-3); font-style: italic; }
+
+@media (max-width: 560px) {
+  .setup { flex-direction: column; align-items: stretch; }
+  .field input { width: 100%; }
+  .btn-call { width: 100%; }
+  .controls .btn { flex: 1 1 auto; }
+  .who-role { font-size: var(--t-xs); }
+}

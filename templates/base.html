@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Samvaad AI{% endblock %}</title>
+  <meta name="description" content="Samvaad AI — Ritu, an AI loan advisor for DSAs that handles objections in English, Hindi and Hinglish. Built on Sarvam AI.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='none' stroke='%232e3d9e' stroke-width='3'/%3E%3Cpath d='M10 13h12M10 19h8' stroke='%232e3d9e' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/mukta-latin-400-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', filename='fonts/tiro-devanagari-hindi-latin-400-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/samvaad.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <header class="site-header">
+    <div class="wrap">
+      <a class="wordmark" href="{{ url_for('landing') }}" aria-label="Samvaad AI home">
+        <span class="wordmark-latin">samvaad</span>
+        <span class="wordmark-deva" lang="hi">संवाद</span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <a href="{{ url_for('landing') }}" {% if active == 'home' %}aria-current="page"{% endif %}>Home</a>
+        <a href="{{ url_for('dashboard') }}" {% if active == 'dashboard' %}aria-current="page"{% endif %}>Calls</a>
+        <a href="{{ url_for('phone') }}" {% if active == 'phone' %}aria-current="page"{% endif %}>Phone</a>
+        <a class="nav-cta" href="{{ url_for('talk') }}" {% if active == 'talk' %}aria-current="page"{% endif %}>Talk to Ritu</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block footer %}
+  <footer class="site-footer">
+    <div class="wrap">
+      <span>Samvaad AI, built in Bengaluru by Mohammed Huzaifa.</span>
+      <span>Voice, listening and language by <a href="https://www.sarvam.ai/" rel="noopener">Sarvam AI</a>.</span>
+    </div>
+  </footer>
+  {% endblock %}
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

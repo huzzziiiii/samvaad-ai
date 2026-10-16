@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.py[cod]
+*.wav
+data/audio/
+data/transcripts/
+backup/
+.venv/
+venv/
+.vercel/
+.DS_Store

@@ -1,0 +1,85 @@
+/* Phone calls page — builds on talk.css */
+
+.setup-needed {
+  margin-top: 24px;
+  padding: 18px 22px;
+  border: 1.5px solid var(--wait);
+  border-radius: 4px;
+  background: rgba(168, 112, 26, 0.06);
+}
+
+.setup-needed h2 { font-size: var(--t-lg); }
+.setup-needed p { margin-top: 8px; color: var(--ink-2); font-size: var(--t-sm); }
+.setup-needed ul { margin: 8px 0 0; padding-left: 20px; font-size: var(--t-sm); }
+.setup-needed li { margin: 2px 0; }
+
+.setup-needed code {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.875em;
+  background: var(--paper-deep);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+/* dialling progress: a real sequence, so it's numbered by position */
+.progress {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin: 0 auto;
+  padding: 6px 0 4px;
+  max-width: 520px;
+}
+
+.progress li {
+  flex: 1;
+  position: relative;
+  padding-top: 18px;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+.progress li::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--paper-deep);
+}
+
+.progress li.is-done { color: var(--ink-2); }
+.progress li.is-done::before { background: var(--stamp); }
+
+.progress li.is-now { color: var(--stamp); }
+.progress li.is-now::before {
+  background: var(--stamp);
+  animation: progress-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.dial {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 18px;
+}
+
+.dial .field input { width: 100%; }
+
+.dial[aria-disabled="true"] { opacity: 0.55; }
+
+@media (max-width: 760px) {
+  .dial { grid-template-columns: 1fr; }
+  .dial .btn-call { width: 100%; }
+}

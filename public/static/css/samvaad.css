@@ -1,0 +1,300 @@
+/* Samvaad AI — shared styles
+   World: a DSA's loan file. Manila paper, blue rubber-stamp ink, call sheets.
+   Type: Tiro Devanagari Hindi (display + spoken lines), Mukta (UI). Both cover
+   Latin and Devanagari, so Hindi transcripts render in the same voice. */
+
+:root {
+  color-scheme: light only;
+
+  --paper: #f4efe4;
+  --paper-deep: #e8dfcb;
+  --sheet: #fbf8f1;
+  --ink: #1e2235;
+  --ink-2: #4b4e60;
+  --ink-3: #7b7c88;
+  --rule: rgba(30, 34, 53, 0.14);
+  --rule-strong: rgba(30, 34, 53, 0.28);
+  --stamp: #2e3d9e;
+  --stamp-deep: #222e7c;
+  --stamp-soft: rgba(46, 61, 158, 0.08);
+  --marigold: #d9952b;
+
+  --ok: #2f7a4e;
+  --wait: #a8701a;
+  --no: #a3402d;
+  --none: #8b887c;
+
+  --serif: "Tiro Devanagari Hindi", "Noto Serif Devanagari", Georgia, serif;
+  --sans: "Mukta", "Noto Sans Devanagari", system-ui, sans-serif;
+
+  /* type scale, ~1.333 */
+  --t-xs: 0.8125rem;
+  --t-sm: 0.9375rem;
+  --t-md: 1.0625rem;
+  --t-lg: 1.375rem;
+  --t-xl: 1.875rem;
+  --t-2xl: 2.5rem;
+  --t-3xl: clamp(2.6rem, 5.2vw, 4.25rem);
+
+  --gutter: clamp(16px, 4vw, 48px);
+  --max: 1180px;
+  --radius: 6px;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--t-md);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+img, svg, canvas { display: block; max-width: 100%; }
+
+a { color: var(--stamp); text-underline-offset: 3px; }
+a:hover { color: var(--stamp-deep); }
+
+:focus-visible {
+  outline: 2px solid var(--stamp);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+h1, h2, h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  line-height: 1.12;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+p { margin: 0; }
+
+.wrap {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- header */
+
+.site-header {
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 64px;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.wordmark-latin {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.wordmark-deva {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--stamp);
+  line-height: 1;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav a {
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: var(--t-sm);
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+}
+
+.nav a:hover { color: var(--ink); background: rgba(30, 34, 53, 0.05); }
+.nav a[aria-current="page"] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--stamp); border-radius: 0; }
+
+.nav a.nav-cta {
+  color: var(--sheet);
+  background: var(--stamp);
+  margin-left: 8px;
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+.nav a.nav-cta:hover { background: var(--stamp-deep); color: var(--sheet); }
+
+@media (max-width: 560px) {
+  .wordmark-deva { display: none; }
+  .nav { gap: 0; }
+  .nav a { padding: 8px 6px; font-size: var(--t-xs); }
+  .nav a.nav-cta { margin-left: 4px; }
+}
+
+/* ------------------------------------------------------------- buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  font-family: var(--sans);
+  font-size: var(--t-md);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn svg { width: 18px; height: 18px; flex: none; }
+
+.btn-primary { background: var(--stamp); color: var(--sheet); }
+.btn-primary:hover { background: var(--stamp-deep); color: var(--sheet); }
+
+.btn-quiet { background: transparent; color: var(--ink); border-color: var(--rule-strong); }
+.btn-quiet:hover { border-color: var(--ink); color: var(--ink); }
+
+.btn-danger { background: var(--no); color: var(--sheet); }
+.btn-danger:hover { background: #87321f; color: var(--sheet); }
+
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+/* ------------------------------------------------------- outcome marks */
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  line-height: 1;
+  padding: 5px 8px 4px;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.mark-interested { color: var(--ok); }
+.mark-callback { color: var(--wait); }
+.mark-not_interested { color: var(--no); }
+.mark-unknown { color: var(--none); }
+
+/* the rubber stamp — used once per screen at most */
+.stamp {
+  display: inline-block;
+  font-family: var(--sans);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--stamp);
+  border: 3px solid currentColor;
+  border-radius: 6px;
+  padding: 6px 14px 3px;
+  transform: rotate(-8deg);
+  mix-blend-mode: multiply;
+  /* worn ink */
+  -webkit-mask-image: radial-gradient(circle at 30% 40%, #000 60%, rgba(0,0,0,.75) 75%, #000 90%);
+          mask-image: radial-gradient(circle at 30% 40%, #000 60%, rgba(0,0,0,.75) 75%, #000 90%);
+}
+
+/* ------------------------------------------------------ script transcript
+   Speaker in a margin column, words beside it — read like a call sheet. */
+
+.script {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  column-gap: 16px;
+  row-gap: 14px;
+  margin: 0;
+}
+
+.script dt {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--ink-3);
+  padding-top: 0.3em;
+}
+
+.script dt.is-ritu { color: var(--stamp); }
+
+.script dd {
+  margin: 0;
+  font-size: var(--t-md);
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.script dd.is-ritu {
+  font-family: var(--serif);
+  font-size: 1.125rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 520px) {
+  .script { grid-template-columns: 1fr; row-gap: 2px; }
+  .script dd { margin-bottom: 12px; }
+}
+
+/* ------------------------------------------------------------- footer */
+
+.site-footer {
+  border-top: 1px solid var(--rule);
+  padding: 28px 0 40px;
+  color: var(--ink-3);
+  font-size: var(--t-sm);
+}
+
+.site-footer .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

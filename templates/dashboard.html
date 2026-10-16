@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Calls | Samvaad AI{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
+{% block body_class %}page-dashboard{% endblock %}
+
+{% block content %}
+<div class="wrap dash">
+
+  <div class="dash-head">
+    <div>
+      <h1>Calls</h1>
+      <p class="dash-sub" id="refresh-note">Updates every 15 seconds.</p>
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('talk') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      Start a test call
+    </a>
+  </div>
+
+  <section class="tally" aria-label="Call outcomes">
+    <dl class="tally-figures">
+      <div class="tally-total">
+        <dt>Calls</dt>
+        <dd id="stat-total">{{ stats.total }}</dd>
+      </div>
+      <div>
+        <dt><span class="dot dot-interested"></span>Interested</dt>
+        <dd id="stat-interested">{{ stats.interested }}</dd>
+      </div>
+      <div>
+        <dt><span class="dot dot-callback"></span>Call back</dt>
+        <dd id="stat-callback">{{ stats.callback }}</dd>
+      </div>
+      <div>
+        <dt><span class="dot dot-not_interested"></span>Not interested</dt>
+        <dd id="stat-not_interested">{{ stats.not_interested }}</dd>
+      </div>
+      <div>
+        <dt><span class="dot dot-unknown"></span>No outcome</dt>
+        <dd id="stat-unknown">{{ stats.unknown }}</dd>
+      </div>
+    </dl>
+    <div class="tally-bar" id="tally-bar" role="img" aria-label="Share of calls by outcome"></div>
+    <p class="tally-rate"><strong id="stat-rate">{{ stats.conversion_rate }}%</strong> of calls ended interested.</p>
+  </section>
+
+  <div class="tabs" role="tablist" aria-label="View">
+    <button class="tab" role="tab" id="tab-calls" aria-selected="true" aria-controls="panel-calls">Call log</button>
+    <button class="tab" role="tab" id="tab-leads" aria-selected="false" aria-controls="panel-leads" tabindex="-1">Leads <span class="tab-count">{{ leads|length }}</span></button>
+  </div>
+
+  <section id="panel-calls" role="tabpanel" aria-labelledby="tab-calls" class="panel">
+    <div class="log">
+      <div class="log-list">
+        <div class="log-tools">
+          <label class="visually-hidden" for="search">Search calls</label>
+          <input id="search" class="search" type="search" placeholder="Search a name, number or line" autocomplete="off">
+          <div class="filters" role="group" aria-label="Filter by outcome">
+            <button class="filter" aria-pressed="true" data-outcome="all">All</button>
+            <button class="filter" aria-pressed="false" data-outcome="interested">Interested</button>
+            <button class="filter" aria-pressed="false" data-outcome="callback">Call back</button>
+            <button class="filter" aria-pressed="false" data-outcome="not_interested">Not interested</button>
+            <button class="filter" aria-pressed="false" data-outcome="unknown">No outcome</button>
+          </div>
+        </div>
+        <ul class="calls" id="calls" aria-label="Calls"></ul>
+        <div class="empty" id="calls-empty" hidden>
+          <p class="empty-title">No calls yet.</p>
+          <p>Start a test call with Ritu, or run <code>python scripts/conversation.py</code>. Every call you finish shows up here.</p>
+          <a class="btn btn-quiet" href="{{ url_for('talk') }}">Start a test call</a>
+        </div>
+        <p class="empty empty-filter" id="calls-nomatch" hidden>No calls match that. Clear the search or pick another outcome.</p>
+      </div>
+
+      <article class="viewer" id="viewer" aria-live="polite">
+        <div class="viewer-empty" id="viewer-empty">
+          <p>Pick a call to read the transcript.</p>
+        </div>
+        <div id="viewer-body" hidden>
+          <header class="viewer-head">
+            <div>
+              <h2 id="v-name"></h2>
+              <p class="viewer-meta" id="v-meta"></p>
+            </div>
+            <span id="v-outcome"></span>
+          </header>
+          <dl class="script viewer-script" id="v-script"></dl>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="panel-leads" role="tabpanel" aria-labelledby="tab-leads" class="panel" hidden>
+    {% if leads %}
+    <div class="table-wrap">
+      <table class="leads">
+        <thead>
+          <tr><th scope="col">Name</th><th scope="col">Phone</th><th scope="col">Status</th><th scope="col">Outcome</th><th scope="col">Last called</th><th scope="col"><span class="visually-hidden">Call</span></th></tr>
+        </thead>
+        <tbody>
+          {% for lead in leads %}
+          <tr>
+            <td>{{ lead.name }}</td>
+            <td class="num">{{ lead.phone }}</td>
+            <td>{{ (lead.status or 'pending')|replace('_', ' ')|capitalize }}</td>
+            <td>{{ (lead.outcome or '')|replace('_', ' ')|capitalize or '—' }}</td>
+            <td class="num">{{ lead.last_called or 'Not yet' }}</td>
+            <td><a class="lead-call" href="{{ url_for('phone', name=lead.name, phone=lead.phone) }}">Call</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><p class="empty-title">No leads loaded.</p><p>Add rows to <code>data/leads.csv</code> with a name and phone column.</p></div>
+    {% endif %}
+    <p class="leads-hint">Call one lead with its Call link, or dial the whole list with <code>python scripts/auto_caller.py --mode twilio --max 10</code> while <code>app.py</code> is running.</p>
+  </section>
+
+</div>
+
+<script id="calls-data" type="application/json">{{ calls|tojson }}</script>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>{% endblock %}

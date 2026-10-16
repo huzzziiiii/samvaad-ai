@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Phone calls | Samvaad AI{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/talk.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/phone.css') }}">
+{% endblock %}
+{% block body_class %}page-phone{% endblock %}
+
+{% block content %}
+<div class="wrap talk">
+
+  <div class="talk-intro">
+    <h1>Phone calls</h1>
+    <p>Ritu rings the customer's real phone. They pick up a normal call and talk to her. You follow the conversation here as it happens.</p>
+  </div>
+
+  {% if not setup.ready %}
+  <section class="setup-needed" aria-labelledby="setup-title">
+    <h2 id="setup-title">Finish setup to make calls</h2>
+    <p>This server is missing:</p>
+    <ul>
+      {% for item in setup.missing %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+    <p>Add them to your <code>.env</code> file and restart <code>python app.py</code>. The README has the full Twilio setup.</p>
+  </section>
+  {% endif %}
+
+  <section class="callcard" id="phonecard" data-state="idle" aria-label="Phone call">
+    <header class="callcard-head">
+      <div class="who">
+        <span class="who-avatar" aria-hidden="true">R</span>
+        <div>
+          <p class="who-name" id="p-title">Ritu will call</p>
+          <p class="who-role" id="p-number">Enter a name and number</p>
+        </div>
+      </div>
+      <div class="callcard-right">
+        <span id="p-outcome"></span>
+        <span class="clock" id="p-clock" aria-label="Call length">00:00</span>
+      </div>
+    </header>
+
+    <div class="voice">
+      <ol class="progress" id="p-progress" aria-label="Call progress">
+        <li data-step="dialling">Dialling</li>
+        <li data-step="ringing">Ringing</li>
+        <li data-step="talking">On the call</li>
+        <li data-step="ended">Ended</li>
+      </ol>
+      <p class="status" id="p-status" role="status" aria-live="polite">Ready to call.</p>
+      <p class="status-hint" id="p-hint">{% if setup.hours == '0-24' %}Testing mode: calls can be placed at any hour. Set CALL_HOURS=9-21 before calling real customers.{% else %}Calls are only placed between {{ setup.hours.split('-')[0] }}:00 and {{ setup.hours.split('-')[1] }}:00, India time.{% endif %}</p>
+    </div>
+
+    <form class="dial" id="dial" {% if not setup.ready %}aria-disabled="true"{% endif %}>
+      <label class="field">
+        <span>Customer name</span>
+        <input id="p-name" name="name" type="text" autocomplete="off" placeholder="e.g. Rahul" value="{{ prefill_name }}">
+      </label>
+      <label class="field">
+        <span>Phone number</span>
+        <input id="p-phone" name="phone" type="tel" inputmode="tel" autocomplete="off" placeholder="98765 43210" value="{{ prefill_phone }}" required>
+      </label>
+      <label class="field">
+        <span>Access key</span>
+        <input id="p-key" name="key" type="password" autocomplete="off" placeholder="CALL_ACCESS_KEY" required>
+      </label>
+      <button class="btn btn-primary btn-call" type="submit" id="p-call" {% if not setup.ready %}disabled{% endif %}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>
+        Call now
+      </button>
+    </form>
+
+    <div class="controls" id="p-controls" hidden>
+      <button class="btn btn-danger" type="button" id="p-hangup">Hang up</button>
+    </div>
+
+    <div class="ended" id="p-ended" hidden>
+      <div class="ended-stamp" id="p-stamp" aria-hidden="true"></div>
+      <p class="ended-line" id="p-ended-line"></p>
+      <div class="ended-actions">
+        <a class="btn btn-quiet" href="{{ url_for('dashboard') }}">Open the call log</a>
+        <button class="btn btn-primary" type="button" id="p-again">Call someone else</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="tip">Needs an upgraded (paid) Twilio account. Twilio's free trial blocks call recording and custom call flows, so Ritu can't hear the customer on a trial.</p>
+
+  <section class="live" aria-labelledby="p-live-title">
+    <h2 id="p-live-title">Live transcript</h2>
+    <p class="live-empty" id="p-live-empty">The conversation shows up here once the customer picks up.</p>
+    <dl class="script" id="p-script"></dl>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/phone.js') }}"></script>{% endblock %}

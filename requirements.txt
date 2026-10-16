@@ -1,0 +1,9 @@
+sarvamai
+flask
+python-dotenv
+requests
+gunicorn
+twilio
+numpy
+sounddevice
+soundfile
