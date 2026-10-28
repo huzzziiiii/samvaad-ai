@@ -1,0 +1,59 @@
+.adm { max-width: 1080px; padding-top: 24px; padding-bottom: 56px; }
+.figures--three { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 18px; }
+@media (max-width: 700px) {
+  .figures--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .figures--three > div { padding: 0 8px; border-left: 1px solid var(--rule); }
+  .figures--three > div:first-child { padding-left: 0; border-left: 0; }
+  /* admin keeps its tabs at the top on phones */
+  .page-admin .app-tabs { position: static; background: none; border-top: 0; border-bottom: 1px solid var(--rule); padding: 0; margin-top: 20px; }
+  .page-admin .app-tabs .tab { flex: none; flex-direction: row; font-size: var(--t-sm); padding: 10px 10px 12px; border-top: 0; border-bottom: 2px solid transparent; }
+  .page-admin .app-tabs .tab[aria-selected="true"] { border-bottom-color: var(--stamp); color: var(--ink); }
+}
+
+.adm-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.filter {
+  appearance: none; cursor: pointer; font: inherit; font-size: var(--t-xs); font-weight: 600;
+  color: var(--ink-2); background: transparent; border: 1px solid var(--rule-strong); border-radius: 999px; padding: 5px 12px 4px;
+}
+.filter[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--sheet); }
+
+.adm-reqs { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid var(--ink); }
+.adm-req { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+.adm-req-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.adm-req-name { font-weight: 600; }
+.adm-req-contact { font-size: var(--t-sm); color: var(--ink-2); }
+.adm-req-kind { margin-top: 6px; font-size: var(--t-sm); color: var(--stamp); font-weight: 600; }
+.adm-req-line { font-size: var(--t-sm); color: var(--ink-2); margin-top: 2px; }
+.adm-req-note { margin-top: 6px; font-family: var(--serif); }
+.adm-status { font: inherit; font-size: var(--t-sm); padding: 6px 10px; border: 1px solid var(--rule-strong); border-radius: var(--radius); background: var(--sheet); }
+.adm-more { margin-top: 10px; }
+.adm-more summary { cursor: pointer; font-size: var(--t-sm); color: var(--stamp); }
+.adm-more[open] { padding-bottom: 4px; }
+.adm-note { display: block; width: 100%; margin: 10px 0 8px; padding: 8px 10px; font: inherit; font-size: var(--t-sm); border: 1px solid var(--rule-strong); border-radius: var(--radius); background: var(--paper); }
+.mini { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: var(--t-sm); }
+.mini td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--rule); }
+
+.table-wrap { overflow-x: auto; margin-top: 16px; border-top: 1.5px solid var(--ink); }
+.banks { width: 100%; border-collapse: collapse; font-size: var(--t-sm); min-width: 780px; }
+.banks th { text-align: left; font-weight: 600; color: var(--ink-3); padding: 10px 8px 8px 0; border-bottom: 1px solid var(--rule-strong); }
+.banks td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--rule); }
+.banks input:not([type="checkbox"]), .banks select {
+  width: 100%; min-width: 70px; padding: 6px 8px; font: inherit; font-size: var(--t-sm);
+  border: 1px solid var(--rule); border-radius: 4px; background: var(--sheet); color: var(--ink);
+}
+.banks td:first-child input { min-width: 150px; }
+.banks select { min-width: 140px; }
+.banks input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--stamp); }
+.banks tr.is-sample td:first-child input { border-color: var(--wait); }
+.bank-actions { white-space: nowrap; }
+.bank-actions .btn + .btn { margin-left: 6px; }
+
+.bank-add { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--rule); display: grid; gap: 14px; justify-items: start; }
+.bank-add h2 { font-size: var(--t-lg); }
+.bank-add-grid { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 16px; }
+@media (max-width: 700px) { .bank-add-grid { grid-template-columns: 1fr 1fr; } }
+
+.tools { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid var(--ink); }
+.tools li { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+.tools a { font-family: var(--serif); font-size: var(--t-lg); text-decoration: none; }
+.tools p { font-size: var(--t-sm); color: var(--ink-2); margin-top: 2px; }

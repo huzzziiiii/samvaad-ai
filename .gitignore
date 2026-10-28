@@ -9,3 +9,5 @@ backup/
 venv/
 .vercel/
 .DS_Store
+data/samvaad.db
+data/.secret_key

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Privacy | Samvaad{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">{% endblock %}
+
+{% block content %}
+<article class="wrap prose">
+  <h1>How Samvaad uses your data</h1>
+  <p class="prose-lede">In plain words. If anything here is unclear, ask us before you add your loans.</p>
+
+  <h2>What we collect</h2>
+  <p>Your name, email and phone number; your monthly take-home salary and employer if you add them; and the loans you enter: type, lender, amount left, interest rate, EMI and foreclosure charge. We never ask for passwords, OTPs, PAN, Aadhaar, card numbers or bank account numbers. Please don't type them anywhere in the app.</p>
+
+  <h2>What we use it for</h2>
+  <p>To calculate your payoff plan, savings and borrowing room, and, only when you tap "Get this done", so the Samvaad team can call you and arrange a balance transfer or loan with a bank you choose. We don't sell your data, and we don't share it with any bank unless you ask us to apply on your behalf.</p>
+
+  <h2>Ritu, the AI advisor</h2>
+  <p>When you ask Ritu a question, the AI service that writes her answer receives your question and your loan figures (types, lenders, amounts and rates). It does not receive your name, email, phone number or employer. Voice questions are turned into text by a speech service and not stored by Samvaad.</p>
+
+  <h2>How Samvaad is paid</h2>
+  <p>You never pay Samvaad. When a loan or balance transfer you choose is approved, the bank pays Samvaad a fee. The savings we show are calculated the same way for every lender, after fees.</p>
+
+  <h2>Your choices</h2>
+  <p>You can edit or remove any loan at any time from the Loans tab. To delete your account and everything in it, email us and we'll remove it.</p>
+
+  <p class="fine">Figures in Samvaad are estimates based on what you enter and the lender rates we have on file. Final rates, fees and approval are decided by the bank.</p>
+</article>
+{% endblock %}

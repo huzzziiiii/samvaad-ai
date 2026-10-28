@@ -16,11 +16,12 @@
 
   var seconds = 71;
   function paintClock() {
+    if (!clock) return;
     var m = Math.floor(seconds / 60), s = seconds % 60;
     clock.textContent = (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
   }
   paintClock();
-  var tick = setInterval(function () { seconds += 1; paintClock(); }, 1000);
+  var tick = clock ? setInterval(function () { seconds += 1; paintClock(); }, 1000) : null;
 
   var t = 500;
   for (var i = 0; i < items.length; i += 2) {
@@ -33,6 +34,6 @@
 
   setTimeout(function () {
     stamp.classList.add("is-in");
-    clearInterval(tick);
+    if (tick) clearInterval(tick);
   }, t + 200);
 })();

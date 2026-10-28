@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Samvaad AI | Ritu, the AI loan advisor that handles objections{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <h1>Ritu doesn't hang up at the first&nbsp;no.</h1>
+      <p class="hero-lede">
+        An AI loan advisor for DSAs. She calls your leads, answers the objections
+        your best caller answers every day, and switches to Hindi or Hinglish when the customer does.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{{ url_for('talk') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+          Talk to Ritu
+        </a>
+        <a class="btn btn-quiet" href="{{ url_for('dashboard') }}">See the call log</a>
+      </div>
+      <p class="hero-stack">
+        Runs on Sarvam AI: Bulbul v3 for her voice, Saaras v3 to listen, sarvam-105b to think.
+      </p>
+    </div>
+
+    <figure class="sheet" aria-label="Example call: Ritu handles the objection that the customer will go directly to the bank">
+      <header class="sheet-head">
+        <div>
+          <span class="sheet-label">Call sheet</span>
+          <span class="sheet-lead">Rahul S., personal loan</span>
+        </div>
+        <span class="sheet-timer" aria-hidden="true">
+          <span class="rec-dot"></span><span id="sheet-clock">01:42</span>
+        </span>
+      </header>
+
+      <dl class="script sheet-script" id="sheet-script">
+        <dt>Customer</dt>
+        <dd class="beat">I'll just apply at my own bank directly.</dd>
+
+        <dt class="is-ritu">Ritu</dt>
+        <dd class="is-ritu beat">You can, sir. But banks approve only 30 to 40 percent of direct applications, and every rejection leaves a hard enquiry on your CIBIL. We check which of our 30+ partner banks fits your profile first, so you apply once.</dd>
+
+        <dt>Customer</dt>
+        <dd class="beat" lang="hi-Latn">Accha… toh kitna mil sakta hai?</dd>
+
+        <dt class="is-ritu">Ritu</dt>
+        <dd class="is-ritu beat" lang="hi-Latn">Aapki company aur monthly salary bata dijiye, main do minute mein check karke batati hoon. Payslip bas WhatsApp pe bhej dena.</dd>
+      </dl>
+
+      <div class="sheet-stamp" aria-hidden="true"><span class="stamp">Interested</span></div>
+      <figcaption class="visually-hidden">Outcome: interested.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="contrast" aria-labelledby="contrast-title">
+  <div class="wrap">
+    <h2 id="contrast-title">Most AI callers qualify. Ritu convinces.</h2>
+    <p class="section-lede">Same lead, same first answer. What happens next decides whether the file gets opened.</p>
+
+    <div class="contrast-said">
+      <span class="contrast-said-label">The customer says</span>
+      <q>I'm not interested.</q>
+    </div>
+
+    <div class="contrast-grid">
+      <article class="contrast-col contrast-col--them">
+        <h3>A typical AI caller</h3>
+        <p class="contrast-line">Okay, no problem. Thank you for your time. Have a good day.</p>
+        <p class="contrast-result"><span class="mark mark-not_interested">Lead closed</span></p>
+      </article>
+      <article class="contrast-col contrast-col--ritu">
+        <h3>Ritu</h3>
+        <p class="contrast-line">I completely understand, most people say that at first. Quick question though: do you have any EMIs running right now? I might be able to reduce what you're already paying, not add to it. Worth 60 seconds?</p>
+        <p class="contrast-result"><span class="mark mark-interested">Conversation continues</span></p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="objections" aria-labelledby="objections-title">
+  <div class="wrap">
+    <div class="objections-head">
+      <h2 id="objections-title">Eleven objections, answered the way the calling floor answers them.</h2>
+      <p class="section-lede">Written from three months of real DSA calls, in English and in Hindi. She agrees first, then reframes.</p>
+    </div>
+
+    <ol class="ledger">
+      <li><q>Not interested.</q><p>Asks about existing EMIs, because lowering what they already pay is an easier yes than a new loan.</p></li>
+      <li><q>My CIBIL is low.</q><p>Explains that a call never touches their score; it is only checked when they approve the final application.</p></li>
+      <li><q>I already have loans.</q><p>Treats it as the best lead on the list: a balance transfer can cut the monthly burden by 30 to 40 percent.</p></li>
+      <li><q>I'm busy.</q><p>Asks for 60 seconds and promises to hang up if it isn't useful.</p></li>
+      <li><q>This sounds like a scam.</q><p>Agrees the caution is right, and offers Finance Buddha's official number for a callback.</p></li>
+      <li><q>My salary is too low.</q><p>Has arranged loans from 15,000 a month; eligibility depends on more than salary, so check first.</p></li>
+      <li><q>The interest will be too high.</q><p>Rates 2 to 3 percent under walk-in, zero processing fee, and they learn their best rate either way.</p></li>
+      <li><q>I've applied somewhere else.</q><p>Offers to beat the rate in two minutes or confirm they already have the best deal.</p></li>
+      <li><q>I'll go to the bank directly.</q><p>Walks through the hard enquiry risk and how matching the right bank first makes the first application the strongest.</p></li>
+      <li><q>How can I trust an AI?</q><p>Answers plainly, points to real bank relationships, and offers a human manager at any point.</p></li>
+      <li><q>Why trust you over the bank?</q><p>Banks only know their own products; Finance Buddha knows 30+ and processes in a single day, free to the customer.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="flow" aria-labelledby="flow-title">
+  <div class="wrap">
+    <h2 id="flow-title">What happens on every call</h2>
+    <ol class="flow-steps">
+      <li><h3>Dial</h3><p>Twilio rings each lead from your list on their real phone.</p></li>
+      <li><h3>Listen</h3><p>Saaras v3 turns English, Hindi or Hinglish speech into text.</p></li>
+      <li><h3>Think</h3><p>sarvam-105b picks the reply, using the Finance Buddha playbook.</p></li>
+      <li><h3>Speak</h3><p>Bulbul v3 answers in Ritu's voice, in the customer's language.</p></li>
+      <li><h3>Follow up</h3><p>Interested leads get a WhatsApp asking for their payslip.</p></li>
+      <li><h3>Review</h3><p>Every call is saved with its outcome on the call log.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="origin" aria-labelledby="origin-title">
+  <div class="wrap origin-grid">
+    <h2 id="origin-title">Built from three months on a DSA calling floor.</h2>
+    <div class="origin-copy">
+      <p>
+        I spent three months cold-calling for personal loans at Credwise. The calls that converted
+        were never the ones that read the script; they were the ones that heard the objection behind
+        the objection. Samvaad is that caller, available for every lead on the list.
+      </p>
+      <p class="origin-sign">Mohammed Huzaifa, CSE (AI &amp; ML), Bengaluru</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{{ url_for('talk') }}">Talk to Ritu</a>
+        <a class="btn btn-quiet" href="{{ url_for('dashboard') }}">
+          {% if stats.total %}See {{ stats.total }} logged call{{ 's' if stats.total != 1 }}{% else %}See the call log{% endif %}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/landing.js') }}"></script>{% endblock %}

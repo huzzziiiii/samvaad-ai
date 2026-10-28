@@ -21,6 +21,42 @@ from core.paths import AUDIO_DIR, TRANSCRIPT_DIR, BUNDLED_TRANSCRIPT_DIR, LEADS_
 # same /static/... URLs, and Flask serves them the same way locally.
 app = Flask(__name__, static_folder="public/static", static_url_path="/static")
 
+# ----------------------------------------------------------- Samvaad app
+from datetime import timedelta
+from core import auth
+import customer
+import admin
+
+app.secret_key = auth.secret_key()
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=auth.ON_VERCEL or bool(os.getenv("SECURE_COOKIES")),
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+    MAX_CONTENT_LENGTH=8 * 1024 * 1024,
+)
+app.register_blueprint(customer.bp)
+app.register_blueprint(admin.bp)
+
+# The older calling tools (call log, real phone calls) are for you, not customers.
+ADMIN_ONLY_PREFIXES = ("/dashboard", "/phone", "/api/calls", "/api/leads", "/api/stats", "/api/phone/")
+
+
+@app.before_request
+def _admin_only_tools():
+    if request.path.startswith(ADMIN_ONLY_PREFIXES) and not auth.is_admin():
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Admins only."}), 403
+        from flask import redirect, url_for
+        return redirect(url_for("customer.login", next=request.path))
+    return None
+
+
+@app.context_processor
+def _inject_user():
+    user = auth.current_user()
+    return {"current_user": user, "user_is_admin": auth.is_admin(user) if user else False}
+
 EXOTEL_SESSIONS = {}
 
 MAX_HISTORY = 40        # messages of context sent back to the model
@@ -93,8 +129,14 @@ def get_leads():
 
 @app.route("/")
 def landing():
+    return render_template("index.html", active="home")
+
+
+@app.route("/demo")
+def demo():
+    """The original Samvaad pitch: Ritu as an AI caller for DSAs (built on Sarvam AI)."""
     stats = get_stats(get_transcripts())
-    return render_template("index.html", stats=stats, active="home")
+    return render_template("demo.html", stats=stats, active="demo")
 
 
 @app.route("/dashboard")

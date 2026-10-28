@@ -1,43 +1,52 @@
-# Samvaad AI
+# Samvaad
 
-**Ritu, an AI loan advisor that convinces, not just qualifies.**
+**Your loans, sorted.** An AI loan advisor for salaried employees in India.
 
-Most AI voice callers in the DSA space collect lead details and hang up at the first "no". Ritu handles the objection the way a trained DSA caller does: she agrees first, then reframes. She speaks British English by default and switches to Hindi or Hinglish only when the customer does.
+Customers add their loans and Samvaad shows them how to close them faster, how much interest a little extra each month saves, which loans are worth moving to a cheaper lender after every fee, and how much more they could borrow. Ritu, the advisor, answers questions about *their* loans in English or Hindi, by text or voice. When they want a balance transfer or a new loan, one tap sends the request to the Samvaad team, who process it directly with the bank.
 
-Built on Sarvam AI: **Bulbul v3** for her voice, **Saaras v3** to listen (with automatic language detection), and **sarvam-105b** to think. Inspired by three months cold-calling for personal loans at a DSA.
+Two rules keep it trustworthy:
+- **The AI never calculates.** Every number comes from `core/loans.py` (EMIs, payoff plans, balance-transfer savings after fees, eligibility). Ritu only explains those numbers.
+- **The AI never sees who the customer is.** No name, email, phone or employer is sent to it, only loan types, lenders, amounts and rates.
 
-## What it does
+## What's in the app
 
-- **Talk to Ritu in the browser** (`/talk`): a full voice call. The page records you, detects when you stop speaking, and plays Ritu's reply. There's a typing fallback for noisy rooms.
-- **Call log** (`/dashboard`): every call with its outcome (interested, call back, not interested), searchable transcripts, and the lead list.
-- **Eleven objections handled** in English and Hindi, including "I'll go directly to the bank", "How can I trust an AI?", "My CIBIL is low" and "I already have loans".
-- **Real phone calls** through Twilio: Ritu rings the customer's phone, with a live transcript on the Phone page and a CSV batch dialer.
-- **WhatsApp payslip follow-ups** through Twilio.
+| Page | For | What it does |
+|---|---|---|
+| `/` | Everyone | Landing page |
+| `/app` | Customers | Overview + payoff plan, Loans, Savings, Ask Ritu, Requests. Installs on phones like an app. |
+| `/admin` | You | Customer requests with status and notes, the bank rate table, the older calling tools |
+| `/demo`, `/talk`, `/phone`, `/dashboard` | You | Ritu the AI caller (the original Samvaad AI: Sarvam voice demo, Twilio calls, call log) |
 
-## Run it locally
+## Run it on your laptop (no accounts needed)
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env        # add your SARVAM_API_KEY
-python app.py               # open http://localhost:5000
+cp .env.example .env      # optional: add GEMINI_API_KEY for Ritu's AI answers
+python app.py             # open http://localhost:5000
 ```
 
-Microphone voice loop in the terminal:
+Without Supabase it runs in **local test mode**: any email signs you in, data is saved in `data/samvaad.db`, and whoever signs in can open `/admin`. Without an AI key, Ritu answers from the calculated numbers.
 
-```bash
-python scripts/conversation.py
-```
+Run the maths tests with `python tests/test_loans.py`.
 
-## Deploy on Vercel
+## Go live (Vercel + Supabase)
 
-1. Push this repo to GitHub.
-2. On [vercel.com/new](https://vercel.com/new), import the repo. Vercel detects the Flask app in `app.py`.
-3. Under **Environment Variables**, add `SARVAM_API_KEY`.
-4. Deploy, then open `https://<your-project>.vercel.app/talk` on your phone.
+1. **Supabase** (free): create a project at [supabase.com](https://supabase.com). In **SQL Editor**, paste and run `supabase/schema.sql`. In **Authentication → Sign In / Providers**, keep Email on (turn off "Confirm email" while testing if you like).
+2. **Gemini** (free): create an API key in Google AI Studio.
+3. **Vercel → Project → Settings → Environment Variables**, add:
+   - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY` (Supabase → Project Settings → API)
+   - `SECRET_KEY`: any long random string
+   - `ADMIN_EMAILS`: your email
+   - `GEMINI_API_KEY` (and optionally `SARVAM_API_KEY` for voice)
+4. Redeploy. Sign up on the live site with your admin email, open `/admin` → **Bank rates**, and replace the sample banks with the lenders you're empanelled with.
 
-On Vercel the web call keeps its state in the browser, and Ritu's audio comes back inside each response, so no server files are needed. Vercel can't keep files, so finished calls are saved in the browser that made them and show up in that browser's call log. For a permanent shared call log, and for real phone calls, run it on an always-on server (your laptop with a tunnel, or Railway) (`Procfile` and `railway.json` are included).
+Before real customers use it, move Ritu to a paid AI tier (`AI_PROVIDER=claude` with `ANTHROPIC_API_KEY`, or Gemini's paid tier): on Gemini's free tier, Google may use the data to improve its products.
 
-## Real phone calls (Twilio)
+## Ritu, the AI caller (calling tools)
+
+The original Samvaad AI is still here for you in `/admin` → Calling tools: Ritu handles loan objections on calls in English and Hindi, built on Sarvam AI (Bulbul v3 voice, Saaras v3 listening). `/talk` is the browser demo; `/phone` makes real calls through Twilio.
+
+### Real phone calls (Twilio)
 
 On the **Phone** page (`/phone`) you enter a name and number, and Ritu rings that phone. The customer picks up a normal call and talks to her; you follow a live transcript, and the finished call lands in the call log. Each lead in the call log also has a **Call** link, and `python scripts/auto_caller.py --mode twilio` dials the whole `data/leads.csv` list.
 
@@ -73,7 +82,15 @@ Copy the `https://...trycloudflare.com` link into `PUBLIC_BASE_URL`, restart `py
 ## Project layout
 
 ```
-app.py                 Flask app: pages, call APIs, Twilio and Exotel webhooks
+app.py                 Flask app: wires everything together, plus the calling tools
+customer.py            Customer app routes: sign-in, loans, plan, savings, Ask Ritu, requests
+admin.py               Admin routes: requests, bank rates
+core/loans.py          Loan maths: EMIs, payoff plans, balance transfers, eligibility
+core/advisor.py        Ritu the advisor: Gemini / Claude / Sarvam switch, anonymised context
+core/store.py          Database: Supabase in production, SQLite locally
+core/auth.py           Sign-in: Supabase accounts, or local test mode
+supabase/schema.sql    Tables for Supabase (row-level security on)
+tests/test_loans.py    Maths tests
 core/respond.py        Ritu's script, language choice, reply generation
 core/listen.py         Microphone VAD + Sarvam speech-to-text
 core/speak.py          Sarvam text-to-speech (voice: ritu)
@@ -89,7 +106,14 @@ public/static/         CSS, JS and self-hosted fonts (Mukta, Tiro Devanagari Hin
 
 | Variable | Used for |
 |---|---|
-| `SARVAM_API_KEY` | Required. Voice, listening and replies |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Ritu's AI answers (free tier to start) |
+| `AI_PROVIDER` | `auto`, `gemini`, `claude` or `sarvam` |
+| `ANTHROPIC_API_KEY`, `CLAUDE_MODEL` | Claude instead of Gemini (paid) |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY` | Database and customer accounts |
+| `SUPABASE_GOOGLE_LOGIN` | `1` to show "Continue with Google" (after enabling it in Supabase) |
+| `SECRET_KEY` | Signs the login cookie. Required on Vercel |
+| `ADMIN_EMAILS` | Who can open `/admin` |
+| `SARVAM_API_KEY` | Voice in Ask Ritu, and Ritu's voice in the calling tools |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` | Real phone calls |
 | `PUBLIC_BASE_URL` | Public https link Twilio sends calls to |
 | `CALL_ACCESS_KEY` | Password for starting calls from the Phone page |
@@ -99,4 +123,4 @@ public/static/         CSS, JS and self-hosted fonts (Mukta, Tiro Devanagari Hin
 
 ---
 
-Built by Mohammed Huzaifa, CSE (AI & ML), Bengaluru.
+Built by Mohammed Huzaifa, CSE (AI & ML), Bengaluru. The voice and calling tools are built on Sarvam AI.

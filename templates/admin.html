@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Admin | Samvaad{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+{% block body_class %}page-admin{% endblock %}
+
+{% block content %}
+<div class="wrap adm">
+  <div class="app-head">
+    <div>
+      <h1>Admin</h1>
+      <p class="app-sub" id="adm-sub">Loading…</p>
+    </div>
+  </div>
+
+  <dl class="figures figures--three" id="adm-figures">
+    <div><dt>New requests</dt><dd id="c-new">—</dd></div>
+    <div><dt>Customers</dt><dd id="c-cust">—</dd></div>
+    <div><dt>Loans added</dt><dd id="c-loans">—</dd></div>
+  </dl>
+
+  <nav class="tabs app-tabs adm-tabs" role="tablist" aria-label="Admin sections">
+    <button class="tab" role="tab" id="atab-requests" aria-controls="apanel-requests" aria-selected="true">Requests</button>
+    <button class="tab" role="tab" id="atab-banks" aria-controls="apanel-banks" aria-selected="false" tabindex="-1">Bank rates</button>
+    <button class="tab" role="tab" id="atab-tools" aria-controls="apanel-tools" aria-selected="false" tabindex="-1">Calling tools</button>
+  </nav>
+
+  <section class="panel" id="apanel-requests" role="tabpanel" aria-labelledby="atab-requests">
+    <div class="adm-filters" role="group" aria-label="Filter by status" id="status-filters"></div>
+    <ul class="adm-reqs" id="adm-reqs"></ul>
+    <p class="empty-inline" id="adm-reqs-empty" hidden>No requests here yet. When a customer taps "Get this done", it lands here.</p>
+  </section>
+
+  <section class="panel" id="apanel-banks" role="tabpanel" aria-labelledby="atab-banks" hidden>
+    <p class="notice">Only list banks you're empanelled with, and keep rates current from their rate cards. Customers see these as "from" rates, and every saving is calculated from them.</p>
+    <div class="table-wrap">
+      <table class="banks">
+        <thead><tr>
+          <th scope="col">Bank</th><th scope="col">Loan type</th><th scope="col">From %</th><th scope="col">Up to %</th>
+          <th scope="col">Fee %</th><th scope="col">Max months</th><th scope="col">Live</th><th scope="col"><span class="visually-hidden">Actions</span></th>
+        </tr></thead>
+        <tbody id="bank-rows"></tbody>
+      </table>
+    </div>
+    <form class="bank-add" id="bank-add" novalidate>
+      <h2>Add a lender</h2>
+      <div class="bank-add-grid">
+        <label class="field"><span>Bank</span><input name="name" required maxlength="60" placeholder="e.g. HDFC Bank"></label>
+        <label class="field"><span>Loan type</span><select name="product" id="bank-product"></select></label>
+        <label class="field"><span>From %</span><input name="rate_min" inputmode="decimal" required placeholder="10.5"></label>
+        <label class="field"><span>Up to %</span><input name="rate_max" inputmode="decimal" placeholder="14"></label>
+        <label class="field"><span>Processing fee %</span><input name="processing_fee_pct" inputmode="decimal" placeholder="1"></label>
+        <label class="field"><span>Max tenure (months)</span><input name="max_tenure_months" inputmode="numeric" placeholder="60"></label>
+      </div>
+      <p class="form-msg" id="bank-msg" role="alert"></p>
+      <button class="btn btn-primary" type="submit">Add lender</button>
+    </form>
+  </section>
+
+  <section class="panel" id="apanel-tools" role="tabpanel" aria-labelledby="atab-tools" hidden>
+    <ul class="tools">
+      <li><a href="{{ url_for('dashboard') }}">Call log</a><p>Every Ritu sales call with its outcome and transcript, plus your CSV lead list.</p></li>
+      <li><a href="{{ url_for('phone') }}">Phone calls</a><p>Ritu rings a real number through Twilio. Needs a paid Twilio account and an always-on server.</p></li>
+      <li><a href="{{ url_for('talk') }}">Talk to Ritu (sales demo)</a><p>The browser voice demo of Ritu handling loan objections.</p></li>
+      <li><a href="{{ url_for('demo') }}">Ritu pitch page</a><p>The original Samvaad AI caller page, for DSAs and the Sarvam internship.</p></li>
+    </ul>
+  </section>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}
