@@ -7,3 +7,4 @@ twilio
 numpy
 sounddevice
 soundfile
+openpyxl

@@ -180,6 +180,16 @@ class SQLiteStore:
                           "(select count(*) from requests where status='new') as new_requests")
         return rows[0]
 
+    # export (admin)
+    def admin_all_profiles(self):
+        return self._rows("select * from profiles order by created_at")
+
+    def admin_all_loans(self):
+        return self._rows("select * from loans order by created_at")
+
+    def admin_all_requests(self):
+        return self._decode(self._rows("select * from requests order by created_at desc"))
+
     # banks
     def list_banks(self, active_only=False):
         sql = "select * from banks" + (" where active=1" if active_only else "") + " order by product, rate_min"
@@ -301,6 +311,30 @@ class SupabaseStore:
     def admin_counts(self):
         return {"customers": self._count("profiles"), "loans": self._count("loans"),
                 "new_requests": self._count("requests", {"status": "eq.new"})}
+
+    # export (admin)
+    def _all(self, table, order):
+        rows, start, step = [], 0, 1000
+        while True:
+            headers = dict(self.headers, Range=f"{start}-{start + step - 1}")
+            r = requests.get(f"{self.base}/{table}", params={"select": "*", "order": order},
+                             headers=headers, timeout=30)
+            if r.status_code >= 400:
+                raise SupabaseError(f"Supabase GET {table} failed ({r.status_code}): {r.text[:200]}")
+            page = r.json()
+            rows.extend(page)
+            if len(page) < step:
+                return rows
+            start += step
+
+    def admin_all_profiles(self):
+        return self._all("profiles", "created_at")
+
+    def admin_all_loans(self):
+        return self._all("loans", "created_at")
+
+    def admin_all_requests(self):
+        return self._all("requests", "created_at.desc")
 
     # banks
     def list_banks(self, active_only=False):

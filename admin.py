@@ -1,5 +1,7 @@
 """Samvaad admin panel: customer requests and the bank rate table."""
-from flask import Blueprint, render_template, request, jsonify
+from datetime import datetime, timedelta, timezone
+
+from flask import Blueprint, render_template, request, jsonify, Response
 
 from core import auth
 from core import loans as L
@@ -60,6 +62,23 @@ def request_update(req_id):
     note = data.get("note")
     store.admin_update_request(req_id, status=status, note=str(note)[:2000] if note is not None else None)
     return jsonify({"ok": True})
+
+
+@bp.route("/admin/export.xlsx")
+@auth.admin_required
+def export_excel():
+    """Every request, customer and loan as an Excel file."""
+    from core.export import build_workbook
+    store, err = _store()
+    if err:
+        return err
+    data = build_workbook(store)
+    stamp = datetime.now(timezone(timedelta(hours=5, minutes=30))).strftime("%Y-%m-%d")
+    return Response(data, headers={
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": f'attachment; filename="samvaad-{stamp}.xlsx"',
+        "Cache-Control": "no-store",
+    })
 
 
 def _clean_bank(data):
