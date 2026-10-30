@@ -253,3 +253,23 @@ def bank_delete(bank_id):
         return err
     store.delete_bank(bank_id)
     return jsonify({"banks": store.list_banks()})
+
+
+# ------------------------------------------------------------ daily cleanup
+
+@bp.route("/api/cron/cleanup")
+def cron_cleanup():
+    """Vercel calls this once a day with `Authorization: Bearer $CRON_SECRET`.
+    Admins can also open it while signed in."""
+    import hmac
+    import os
+    from core import cleanup
+    secret = os.getenv("CRON_SECRET", "")
+    sent = request.headers.get("Authorization", "")
+    allowed = (secret and hmac.compare_digest(sent, f"Bearer {secret}")) or auth.is_admin()
+    if not allowed:
+        return jsonify({"error": "Not allowed."}), 401
+    store, err = _store()
+    if err:
+        return err
+    return jsonify(cleanup.run(store))

@@ -100,3 +100,9 @@ alter table public.events enable row level security;
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('reports', 'reports', false, 5242880, array['application/pdf'])
 on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------- v3 (report retention)
+-- CIBIL report PDFs are deleted 180 days after upload (RBI credit information rules).
+alter table public.profiles add column if not exists cibil_report_at timestamptz;
+update public.profiles set cibil_report_at = coalesce(updated_at, now())
+ where cibil_report is not null and cibil_report_at is null;

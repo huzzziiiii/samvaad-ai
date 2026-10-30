@@ -27,7 +27,7 @@ REQUEST_KINDS = {
 REQUEST_STATUSES = ["new", "contacted", "in_progress", "done", "closed"]
 
 PROFILE_FIELDS = ("name", "email", "phone", "salary", "employer", "city",
-                  "cibil_score", "cibil_date", "cibil_report", "last_seen")
+                  "cibil_score", "cibil_date", "cibil_report", "cibil_report_at", "last_seen")
 LOAN_FIELDS = ("type", "lender", "outstanding", "rate", "emi", "months_left", "foreclosure_pct", "source")
 
 # What customers did, as shown in the admin activity feed.
@@ -116,10 +116,14 @@ class SQLiteStore:
             c.executescript(self.SCHEMA)
             # older local databases: add the newer columns
             for table, col, kind in (("profiles", "cibil_score", "integer"), ("profiles", "cibil_date", "text"),
-                                     ("profiles", "cibil_report", "text"), ("profiles", "last_seen", "text"),
+                                     ("profiles", "cibil_report", "text"), ("profiles", "cibil_report_at", "text"),
+                                     ("profiles", "last_seen", "text"),
                                      ("loans", "source", "text")):
                 if col not in [r[1] for r in c.execute(f"pragma table_info({table})")]:
                     c.execute(f"alter table {table} add column {col} {kind}")
+            # reports saved before we tracked upload time: start their 6 months now
+            c.execute("update profiles set cibil_report_at=? where cibil_report is not null "
+                      "and cibil_report != '' and cibil_report_at is null", (now(),))
             if not c.execute("select 1 from banks limit 1").fetchone():
                 for name, product, lo, hi, fee, tenure in SAMPLE_BANKS:
                     c.execute("insert into banks values (?,?,?,?,?,?,?,?,?,?)",
@@ -260,6 +264,21 @@ class SQLiteStore:
     def read_report(self, path):
         with open(os.path.join(WRITE_DATA, "reports", path), "rb") as f:
             return f.read()
+
+    def delete_report(self, path):
+        try:
+            os.remove(os.path.join(WRITE_DATA, "reports", path))
+        except FileNotFoundError:
+            pass
+
+    def old_reports(self, before):
+        return self._rows("select user_id, cibil_report, cibil_report_at from profiles "
+                          "where cibil_report is not null and cibil_report != '' "
+                          "and cibil_report_at < ?", (before,))
+
+    def count_events(self, user_id, kind, since):
+        return self._rows("select count(*) as n from events where user_id=? and kind=? and created_at>=?",
+                          (user_id, kind, since))[0]["n"]
 
     # banks
     def list_banks(self, active_only=False):
@@ -453,6 +472,22 @@ class SupabaseStore:
         if r.status_code >= 400:
             raise SupabaseError(f"Report download failed ({r.status_code})")
         return r.content
+
+    def delete_report(self, path):
+        headers = {k: v for k, v in self.headers.items() if k != "Content-Type"}
+        r = requests.delete(f"{self._storage()}/object/reports/{path}", headers=headers, timeout=30)
+        if r.status_code >= 400 and r.status_code not in (400, 404):
+            raise SupabaseError(f"Report delete failed ({r.status_code}): {r.text[:200]}")
+
+    def old_reports(self, before):
+        return self._req("GET", "profiles", {
+            "select": "user_id,cibil_report,cibil_report_at",
+            "cibil_report": "not.is.null",
+            "cibil_report_at": f"lt.{before}",
+            "limit": "500"})
+
+    def count_events(self, user_id, kind, since):
+        return self._count("events", {"user_id": f"eq.{user_id}", "kind": f"eq.{kind}", "created_at": f"gte.{since}"})
 
     # banks
     def list_banks(self, active_only=False):

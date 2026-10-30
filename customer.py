@@ -8,7 +8,8 @@ from flask import Blueprint, render_template, request, jsonify, redirect, url_fo
 from core import auth
 from core import loans as L
 from core import advisor
-from core.store import get_store, REQUEST_KINDS
+from core import limits
+from core.store import get_store, REQUEST_KINDS, now as store_now
 
 bp = Blueprint("customer", __name__)
 
@@ -126,6 +127,8 @@ def auth_config():
 @bp.route("/auth/session", methods=["POST"])
 def auth_session():
     payload = request.get_json(silent=True) or {}
+    if limits.too_fast("auth:" + limits.client_ip(request), 20, 600):
+        return jsonify({"error": "Too many sign-in attempts. Wait a few minutes and try again."}), 429
     m = auth.mode()
     if m == "off":
         return jsonify({"error": "Sign-in isn't set up on this server yet."}), 503
@@ -370,6 +373,8 @@ def new_request():
         return jsonify({"error": "Add a phone number so the Samvaad team can call you."}), 400
     if len(store.list_requests(uid)) >= 50:
         return jsonify({"error": "You have too many open requests. The team will get back to you."}), 429
+    if limits.over_daily(store, uid, "request"):
+        return jsonify({"error": limits.MESSAGES["request"]}), 429
 
     store.upsert_profile(uid, {"phone": phone})
     profile = store.get_profile(uid) or {}
@@ -420,9 +425,13 @@ def ask_ritu():
         return err
     uid = user_id()
     data = request.get_json(silent=True) or {}
-    message = (data.get("message") or "").strip()
+    message = (data.get("message") or "").strip()[:1000]
     if not message:
         return jsonify({"error": "Type or say your question first."}), 400
+    if limits.over_daily(store, uid, "ritu"):
+        return jsonify({"error": limits.MESSAGES["ritu"]}), 429
+    if limits.too_fast("ritu:" + uid, 6, 60):
+        return jsonify({"error": "Slow down a little. Ask again in a minute."}), 429
     voice = bool(data.get("voice"))
     log(store, "ritu", message[:300], {"voice": voice})
     try:
@@ -451,6 +460,8 @@ def ritu_listen():
     """Voice question -> text (Sarvam speech-to-text)."""
     if not os.getenv("SARVAM_API_KEY"):
         return jsonify({"error": "Voice isn't set up. Type your question instead."}), 503
+    if limits.too_fast("listen:" + user_id(), 6, 60):
+        return jsonify({"error": "Slow down a little. Try again in a minute."}), 429
     audio = request.files.get("audio")
     if not audio:
         return jsonify({"error": "No audio received."}), 400
@@ -536,6 +547,8 @@ def upload_report():
     if err:
         return err
     from core import report
+    if limits.over_daily(store, user_id(), "cibil_report") or limits.too_fast("report:" + user_id(), 10, 600):
+        return jsonify({"error": limits.MESSAGES["cibil_report"]}), 429
     f = request.files.get("report")
     if not f:
         return jsonify({"error": "Choose the PDF report from CIBIL."}), 400
@@ -556,11 +569,17 @@ def upload_report():
         return jsonify({"error": code}), 400
 
     uid = user_id()
+    old = (store.get_profile(uid) or {}).get("cibil_report")
     try:
         path = store.save_report(uid, readable)
     except Exception:
         return jsonify({"error": "Couldn't save the report. Try again in a minute."}), 502
-    store.upsert_profile(uid, {"cibil_report": path})
+    store.upsert_profile(uid, {"cibil_report": path, "cibil_report_at": store_now()})
+    if old and old != path:  # keep only the latest report
+        try:
+            store.delete_report(old)
+        except Exception:
+            pass
 
     result, problem = None, None
     if report.enabled():

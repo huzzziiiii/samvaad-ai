@@ -223,7 +223,9 @@
   function poll() {
     return api("GET", "/api/admin/events?limit=60").then(function (d) {
       var newest = d.events[0] ? d.events[0].created_at : "";
-      var hadRequest = latest && d.events.some(function (e) { return e.kind === "request" && e.created_at > latest; });
+      var fresh = latest ? d.events.filter(function (e) { return e.created_at > latest; }) : [];
+      var hadRequest = fresh.some(function (e) { return e.kind === "request"; });
+      var joined = fresh.filter(function (e) { return e.kind === "signed_up"; });
       if (!seenFeed) seenFeed = newest;
       if (tab === "act" && !$("screen-admin").hidden) { FEED = d.events; renderFeed(); seenFeed = newest; $("ad-act-badge").hidden = true; }
       else {
@@ -233,8 +235,15 @@
       if (newest > latest) latest = newest;
       if (hadRequest) {
         loadReqs(); loadSummary();
-        SV.toast("New request just came in.");
+        var r = fresh.filter(function (e) { return e.kind === "request"; })[0];
+        SV.toast("New request" + (r && r.customer_name ? " from " + r.customer_name : "") + ". Open Requests to call them.");
         if (navigator.vibrate) try { navigator.vibrate(120); } catch (e) {}
+      } else if (joined.length) {
+        loadSummary();
+        if (tab === "cust") loadCustomers().catch(function () {});
+        SV.toast(joined.length === 1 ? "New customer signed up: " + (joined[0].customer_name || joined[0].customer_email || "someone")
+                                     : joined.length + " new customers signed up.");
+        if (navigator.vibrate) try { navigator.vibrate(80); } catch (e) {}
       }
     }).catch(function () {});
   }

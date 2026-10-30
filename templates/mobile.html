@@ -86,6 +86,36 @@
     </form>
   </main>
 
+  <!-- 2b. New password (from the reset email) -->
+  <main class="screen" id="screen-newpass" data-screen hidden>
+    <header class="top">
+      <span></span>
+      <button class="call-pill" type="button" data-call aria-label="Call Samvaad">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
+        <span>Call us</span>
+      </button>
+    </header>
+
+    <form class="flow" id="np-form" novalidate>
+      <h1 class="ask">Create a new password</h1>
+      <p class="who" id="np-who"></p>
+
+      <label class="input-wrap pass-wrap">
+        <span class="sr">New password</span>
+        <input id="np-input" name="new-password" type="password" autocomplete="new-password" placeholder="New password">
+        <button class="show" type="button" id="np-show">Show</button>
+      </label>
+      <label class="input-wrap pass-wrap">
+        <span class="sr">Type it again</span>
+        <input id="np-again" name="new-password-again" type="password" autocomplete="new-password" placeholder="Type it again">
+      </label>
+      <p class="hint">At least 8 characters</p>
+      <p class="err" id="np-err" role="alert"></p>
+
+      <button class="btn-main" type="submit" id="np-btn">Save and log in</button>
+    </form>
+  </main>
+
   <!-- 3. Home (inside the app) -->
   <div class="shell" id="screen-home" data-screen hidden>
     <main class="page" id="tab-home">

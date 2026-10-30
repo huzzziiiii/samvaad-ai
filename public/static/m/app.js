@@ -63,7 +63,9 @@
   // =================================================================== sign in
   var sb = null;
   if (CFG.mode === "supabase" && window.supabase) {
-    sb = window.supabase.createClient(CFG.supabase_url, CFG.supabase_anon_key, { auth: { persistSession: true, flowType: "pkce" } });
+    // detectSessionInUrl is off: the reset link is handled below, so it also
+    // works when the customer opens the email on another phone or in Gmail.
+    sb = window.supabase.createClient(CFG.supabase_url, CFG.supabase_anon_key, { auth: { persistSession: true, flowType: "pkce", detectSessionInUrl: false } });
   }
   function goLogin() {
     D = null;
@@ -141,24 +143,85 @@
     p.catch(function (err) { $("pass-err").textContent = err.message; }).finally(function () { busy(btn, false); });
   });
 
+  // ------------------------------------------------------ forgot password
+  // Talks to Supabase Auth directly (no PKCE), so the link in the email works
+  // on any phone or browser, not only the one that asked for it.
+  function authFetch(method, path, body, token) {
+    var h = { "Content-Type": "application/json", apikey: CFG.supabase_anon_key };
+    if (token) h.Authorization = "Bearer " + token;
+    return fetch(CFG.supabase_url.replace(/\/$/, "") + "/auth/v1" + path, { method: method, headers: h, body: method === "GET" ? undefined : JSON.stringify(body || {}) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) { var e = new Error(d.msg || d.error_description || d.message || "Something went wrong. Try again."); e.status = r.status; e.code = d.error_code || d.code; throw e; }
+        return d;
+      }); });
+  }
+
+  var lastReset = 0;
   $("forgot").addEventListener("click", function () {
+    var btn = this;
     if (!sb) { $("pass-err").textContent = "Password reset works on the live app."; return; }
-    sb.auth.resetPasswordForEmail(userId, { redirectTo: location.origin + "/app" }).then(function (res) {
-      if (res.error) throw res.error;
-      toast("We've emailed you a link to reset your password.");
-    }).catch(function (err) { $("pass-err").textContent = err.message || "Couldn't send the reset email."; });
+    if (Date.now() - lastReset < 60000) { $("pass-err").textContent = "We've just sent it. Check your inbox and spam folder."; return; }
+    $("pass-err").textContent = ""; busy(btn, true);
+    authFetch("POST", "/recover?redirect_to=" + encodeURIComponent(location.origin + "/app"), { email: userId }).then(function () {
+      lastReset = Date.now();
+      $("pass-err").textContent = "";
+      toast("We've emailed a reset link to " + userId + ". Check your spam folder too.");
+    }).catch(function (err) {
+      $("pass-err").textContent = err.status === 429 || /rate limit/i.test(err.message)
+        ? "Too many reset emails. Wait a few minutes and try again, or tap Call us."
+        : (err.message || "Couldn't send the reset email.");
+    }).finally(function () { busy(btn, false); });
   });
 
-  // coming back from a password-reset email
+  $("np-show").addEventListener("click", function () {
+    var t = $("np-input").type === "password" ? "text" : "password";
+    $("np-input").type = t; $("np-again").type = t;
+    this.textContent = t === "password" ? "Show" : "Hide";
+  });
+
+  // coming back from the reset email: /app#access_token=...&type=recovery
   function handleRecovery() {
-    if (!sb || !/type=recovery|code=/.test(location.href)) return Promise.resolve(false);
-    return sb.auth.getSession().then(function (res) {
-      var s = res.data && res.data.session;
-      if (!s) return false;
-      var pw = prompt("Choose a new password (at least 8 characters)");
-      var go = pw && pw.length >= 8 ? sb.auth.updateUser({ password: pw }) : Promise.resolve();
-      return go.then(function () { history.replaceState(null, "", "/app"); return startSession({ access_token: s.access_token }); }).then(function () { return true; });
-    }).catch(function () { return false; });
+    var hash = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+    if (!hash.get("type") && !hash.get("error_code")) return Promise.resolve(false);
+    history.replaceState(null, "", "/app");
+    if (hash.get("error_code") || hash.get("error")) {
+      goLogin();
+      $("id-err").textContent = /expired|invalid/i.test(hash.get("error_description") || hash.get("error_code") || "")
+        ? "That reset link has expired. Enter your email and tap Forgot password again."
+        : "That link didn't work. Enter your email and try again.";
+      return Promise.resolve(true);
+    }
+    var token = hash.get("access_token");
+    if (hash.get("type") !== "recovery" || !token || !sb) return Promise.resolve(false);
+    return authFetch("GET", "/user", null, token).then(function (u) {
+      $("np-who").textContent = u.email || "";
+      history_ = ["screen-newpass"]; show("screen-newpass"); $("np-input").focus();
+      $("np-form").onsubmit = function (e) {
+        e.preventDefault();
+        var pw = $("np-input").value;
+        if (pw.length < 8) { $("np-err").textContent = "Password must be at least 8 characters."; return; }
+        if (pw !== $("np-again").value) { $("np-err").textContent = "The two passwords don't match."; return; }
+        $("np-err").textContent = "";
+        var btn = $("np-btn"); busy(btn, true);
+        authFetch("PUT", "/user", { password: pw }, token).then(function () {
+          return sb.auth.signInWithPassword({ email: u.email, password: pw });
+        }).then(function (res) {
+          var s = res && res.data && res.data.session;
+          toast("Password changed.");
+          return startSession({ access_token: s ? s.access_token : token });
+        }).catch(function (err) {
+          $("np-err").textContent = /same|different from the old/i.test(err.message || "")
+            ? "Choose a password different from your old one."
+            : /weak|pwned|leaked/i.test(err.message || "") ? "That password is too easy to guess. Try a longer one."
+            : (err.message || "Couldn't save the password. Try again.");
+        }).finally(function () { busy(btn, false); });
+      };
+      return true;
+    }).catch(function () {
+      goLogin();
+      $("id-err").textContent = "That reset link has expired. Enter your email and tap Forgot password again.";
+      return true;
+    });
   }
 
   // ====================================================================== data

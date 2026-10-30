@@ -52,6 +52,8 @@
 
   <script>
     (function () {
+      // a password-reset email that lands on the website opens the app instead
+      if (/type=recovery|error_code=/.test(location.hash)) { location.replace("/app" + location.hash); return; }
       var b = document.querySelector("[data-signout]");
       if (b) b.addEventListener("click", function () {
         fetch("/auth/logout", { method: "POST" }).finally(function () {
