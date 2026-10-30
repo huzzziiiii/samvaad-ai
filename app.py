@@ -1,4 +1,5 @@
 import os
+import re
 import csv
 import json
 import uuid
@@ -6,7 +7,7 @@ import base64
 import tempfile
 from datetime import datetime
 
-from flask import Flask, render_template, jsonify, request, Response, send_from_directory
+from flask import Flask, render_template, jsonify, request, Response, send_from_directory, redirect, url_for
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -127,8 +128,15 @@ def get_leads():
 
 # ---------------------------------------------------------------------- pages
 
+PHONE_UA = re.compile(r"Android|iPhone|iPod|Mobile|Opera Mini|IEMobile", re.I)
+
+
 @app.route("/")
 def landing():
+    """Phones go straight to the app; laptops see the website.
+    Add ?site=1 to see the website on a phone."""
+    if request.args.get("site") != "1" and PHONE_UA.search(request.headers.get("User-Agent", "")):
+        return redirect(url_for("customer.app_home"))
     return render_template("index.html", active="home")
 
 
