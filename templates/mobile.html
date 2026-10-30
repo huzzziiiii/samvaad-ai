@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="{{ url_for('static', filename='m/icons/icon-192.png') }}" type="image/png">
+  <title>Samvaad</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Samvaad">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='m/icons/apple-touch-icon.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='m/app.css') }}?v={{ v }}">
+</head>
+<body>
+
+  <!-- 0. Starting up -->
+  <main class="screen boot" id="screen-boot" data-screen>
+    <span class="boot-mark">samvaad</span>
+    <span class="spinner" aria-hidden="true"></span>
+  </main>
+
+  <!-- 1. Enter email or phone -->
+  <main class="screen" id="screen-id" data-screen hidden>
+    <header class="top">
+      <span class="brand">samvaad</span>
+      <button class="call-pill" type="button" data-call aria-label="Call Samvaad">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
+        <span>Call us</span>
+      </button>
+    </header>
+
+    <form class="flow" id="id-form" novalidate>
+      <h1 class="ask">What's your phone number or email?</h1>
+
+      <label class="input-wrap">
+        <span class="sr">Phone number or email</span>
+        <input id="id-input" name="id" type="text" inputmode="email" autocomplete="username"
+               placeholder="Enter phone number or email" autofocus>
+      </label>
+      <p class="err" id="id-err" role="alert"></p>
+
+      <button class="btn-main" type="submit">Continue</button>
+      <button class="btn-link" type="button" data-call>Prefer to talk? Call us</button>
+
+      <p class="fine">
+        By continuing, you agree to Samvaad using your details to check your loans and
+        contact you about offers you ask for. <a href="/privacy">Privacy</a>
+      </p>
+    </form>
+  </main>
+
+  <!-- 2. Password (existing user) or create account (new user) -->
+  <main class="screen" id="screen-pass" data-screen hidden>
+    <header class="top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="call-pill" type="button" data-call aria-label="Call Samvaad">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
+        <span>Call us</span>
+      </button>
+    </header>
+
+    <form class="flow" id="pass-form" novalidate>
+      <h1 class="ask" id="pass-title">Welcome back</h1>
+      <p class="who" id="pass-who"></p>
+
+      <label class="input-wrap" id="name-wrap" hidden>
+        <span class="sr">Your name</span>
+        <input id="name-input" name="name" type="text" autocomplete="name" placeholder="Your full name">
+      </label>
+
+      <label class="input-wrap pass-wrap">
+        <span class="sr">Password</span>
+        <input id="pass-input" name="password" type="password" autocomplete="current-password" placeholder="Password">
+        <button class="show" type="button" id="show-pass">Show</button>
+      </label>
+      <p class="hint" id="pass-hint" hidden>At least 8 characters</p>
+      <p class="err" id="pass-err" role="alert"></p>
+
+      <button class="btn-main" type="submit" id="pass-btn">Log in</button>
+      <button class="btn-link" type="button" id="switch-new">New here? Create an account</button>
+      <button class="btn-link btn-link-quiet" type="button" id="forgot">Forgot password?</button>
+    </form>
+  </main>
+
+  <!-- 3. Home (inside the app) -->
+  <div class="shell" id="screen-home" data-screen hidden>
+    <main class="page" id="tab-home">
+      <header class="home-top">
+        <span class="brand">samvaad</span>
+        <button class="call-pill to-admin" type="button" id="to-admin" hidden>Back to admin</button>
+        <button class="call-pill" type="button" data-call aria-label="Call Samvaad">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
+        <span>Call us</span>
+      </button>
+      </header>
+
+      <button class="search" type="button" id="ask-bar">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <span>Ask Ritu about your loans</span>
+      </button>
+
+      <section class="block">
+        <div class="block-head">
+          <h2>Services</h2>
+          <button class="see-all" type="button" data-tab="services">See all</button>
+        </div>
+        <div class="tiles">
+          <button class="tile" type="button" data-service="balance_transfer">
+            <span class="tile-icon">
+              <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><path d="M6 11h17l-4-4M26 21H9l4 4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span class="tile-name">Lower my rate</span>
+          </button>
+          <button class="tile" type="button" data-service="fresh_loan">
+            <span class="tile-icon">
+              <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect x="5" y="9" width="22" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 13v7M12.5 16.5h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+            </span>
+            <span class="tile-name">New loan</span>
+          </button>
+          <button class="tile" type="button" data-service="payoff_help">
+            <span class="tile-icon">
+              <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><path d="M5 24l7-7 5 4 10-11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 10h6v6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span class="tile-name">Close faster</span>
+          </button>
+          <button class="tile" type="button" data-service="callback">
+            <span class="tile-icon">
+              <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><path d="M9 5h4l2 6-3 2a14 14 0 007 7l2-3 6 2v4a2 2 0 01-2 2A20 20 0 017 7a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
+            </span>
+            <span class="tile-name">Call me</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="block">
+        <div class="block-head">
+          <h2>Your loans</h2>
+          <button class="see-all" type="button" data-tab="account" data-jump="acc-loans">Manage</button>
+        </div>
+        <div class="card loans-card" id="loans-card">
+          <div class="big-row">
+            <div>
+              <p class="label">Left to pay</p>
+              <p class="big" id="h-left">—</p>
+            </div>
+            <div class="right">
+              <p class="label">EMI / month</p>
+              <p class="mid" id="h-emi">—</p>
+            </div>
+          </div>
+          <div class="bar"><span id="h-bar"></span></div>
+          <p class="sub" id="h-free">—</p>
+          <ul class="mini-loans" id="h-loans"></ul>
+          <div class="h-empty" id="h-empty" hidden>
+            <p><b>Add your loans to get started</b>Upload your CIBIL report and we'll add them all, or add one yourself.</p>
+            <button class="btn-main btn-small" type="button" id="h-empty-cibil">Upload CIBIL report</button>
+          </div>
+          <button class="btn-add" type="button" id="add-loan">+ Add a loan</button>
+        </div>
+      </section>
+
+      <section class="block">
+        <button class="card score-row" type="button" id="h-score">
+          <span class="score-ring" id="h-score-ring"><span id="h-score-num">?</span></span>
+          <span class="score-text">
+            <b>CIBIL score</b>
+            <span id="h-score-sub">Check yours free. It doesn't lower your score.</span>
+          </span>
+          <svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </section>
+
+      <section class="block" id="saving-block">
+        <div class="card saving-card">
+          <p class="saving-tag">You could save</p>
+          <p class="saving-amt" id="h-saving">—</p>
+          <p class="sub" id="h-saving-sub">—</p>
+          <button class="btn-main btn-small" type="button" id="h-saving-go">See how</button>
+        </div>
+      </section>
+
+      <section class="block" id="activity-block">
+        <div class="block-head"><h2>Activity</h2><button class="see-all" type="button" data-tab="activity">See all</button></div>
+        <div class="card activity-card" id="h-activity"></div>
+      </section>
+    </main>
+
+    <!-- Services tab -->
+    <main class="page" id="tab-services" hidden>
+      <header class="home-top"><h1 class="tab-title">Services</h1></header>
+      <p class="tab-lede">Everything Samvaad does for you, free. Pick one and our executive takes it from there.</p>
+      <ul class="svc-list">
+        <li><button class="svc" type="button" data-service="balance_transfer"><span class="tile-icon"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M6 11h17l-4-4M26 21H9l4 4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Lower my rate</b><span>Move a loan to a cheaper bank. We count every fee first.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" data-service="fresh_loan"><span class="tile-icon"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect x="5" y="9" width="22" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 13v7M12.5 16.5h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><span class="svc-body"><b>New loan</b><span>See how much you can borrow and get the best offer.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" data-service="payoff_help"><span class="tile-icon"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M5 24l7-7 5 4 10-11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 10h6v6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Close faster</b><span>A plan to become debt-free sooner and pay less interest.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" data-service="callback"><span class="tile-icon"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M9 5h4l2 6-3 2a14 14 0 007 7l2-3 6 2v4a2 2 0 01-2 2A20 20 0 017 7a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Call me</b><span>Pick a time and our executive calls you.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+      </ul>
+      <h2 class="list-head">Tools</h2>
+      <ul class="svc-list">
+        <li><button class="svc" type="button" id="svc-cibil"><span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 16a8 8 0 0116 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 16l4-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="svc-body"><b>CIBIL score</b><span>Check your score free and add your loans in one go.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" id="svc-add"><span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="svc-body"><b>Add a loan</b><span>Type in a loan the report didn't show.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" id="svc-ritu"><span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 18.5V6.5A1.5 1.5 0 016.5 5h11A1.5 1.5 0 0119 6.5v8a1.5 1.5 0 01-1.5 1.5H8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Ask Ritu</b><span>Questions about your loans, in English or Hindi.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" data-call><span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Talk to an executive</b><span>Call or WhatsApp us, Monday to Saturday.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+      </ul>
+    </main>
+
+    <!-- Activity tab -->
+    <main class="page" id="tab-activity" hidden>
+      <header class="home-top"><h1 class="tab-title">Activity</h1></header>
+      <p class="tab-lede">Every request you've made and where it stands.</p>
+      <div class="card activity-card" id="act-all"></div>
+    </main>
+
+    <!-- Account tab -->
+    <main class="page" id="tab-account" hidden>
+      <header class="home-top"><h1 class="tab-title">Account</h1></header>
+
+      <div class="me-card">
+        <span class="me-avatar" id="me-avatar">S</span>
+        <span><b id="me-name">Samvaad user</b><span id="me-id"></span></span>
+      </div>
+
+      <h2 class="list-head">Your details</h2>
+      <form class="card details" id="me-form" novalidate>
+        <label class="mini-field"><span>Full name</span><input id="me-f-name" type="text" autocomplete="name" placeholder="Your name"></label>
+        <label class="mini-field"><span>Mobile number</span><input id="me-f-phone" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile"></label>
+        <label class="mini-field"><span>Monthly take-home salary</span><input id="me-f-salary" type="text" inputmode="numeric" placeholder="e.g. 85,000"></label>
+        <label class="mini-field"><span>Company</span><input id="me-f-employer" type="text" autocomplete="organization" placeholder="Where you work"></label>
+        <label class="mini-field"><span>City</span><input id="me-f-city" type="text" autocomplete="address-level2" placeholder="e.g. Bengaluru"></label>
+        <p class="hint-line">Your salary is used to work out how much you can borrow. Only the Samvaad team sees it.</p>
+        <p class="err" id="me-err" role="alert"></p>
+        <button class="btn-main btn-small" type="submit" id="me-save">Save details</button>
+      </form>
+
+      <h2 class="list-head" id="acc-loans">My loans</h2>
+      <div class="card">
+        <ul class="mini-loans acc-loans" id="acc-loan-list"></ul>
+        <button class="btn-add" type="button" id="acc-add">+ Add a loan</button>
+      </div>
+
+      <h2 class="list-head">More</h2>
+      <ul class="svc-list menu">
+        <li id="acc-admin" hidden><a class="svc" href="/admin"><span class="svc-body"><b>Admin panel</b><span>Requests, customers and live activity</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+        <li><button class="svc" type="button" id="acc-cibil"><span class="svc-body"><b>CIBIL score</b><span id="acc-cibil-sub">Not added yet</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" data-call><span class="svc-body"><b>Help and support</b><span>Talk to a Samvaad executive</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><a class="svc" href="/privacy" id="acc-privacy"><span class="svc-body"><b>Privacy</b><span>How we keep your details safe</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+      </ul>
+
+      <button class="btn-signout" type="button" id="sign-out">Sign out</button>
+      <p class="version">Samvaad · version 1.0</p>
+    </main>
+
+    <nav class="tabbar" aria-label="Main">
+      <button class="tabbtn is-on" type="button" data-tab="home">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 11l8-7 8 7v9a1 1 0 01-1 1h-5v-6h-4v6H5a1 1 0 01-1-1z" fill="currentColor"/></svg>
+        <span>Home</span>
+      </button>
+      <button class="tabbtn" type="button" data-tab="services">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13" y="4" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="13" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13" y="13" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <span>Services</span>
+      </button>
+      <button class="tabbtn" type="button" data-tab="activity">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Activity</span>
+      </button>
+      <button class="tabbtn" type="button" data-tab="account">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="12" cy="8.5" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.5 20.5a7.5 7.5 0 0115 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Account</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- 4. Lower my rate: pick a loan -->
+  <main class="screen flow-screen" id="screen-bt-loan" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">Lower my rate</span>
+    </header>
+    <h1 class="ask">Which loan should we move?</h1>
+    <ul class="pick-list" id="bt-loans"></ul>
+  </main>
+
+  <!-- 5. Lower my rate: choose an offer -->
+  <main class="screen flow-screen" id="screen-bt-offers" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">Choose an offer</span>
+    </header>
+
+    <div class="now-card" id="bt-now"></div>
+
+    <ul class="offer-list" id="bt-offers" role="radiogroup" aria-label="Offers"></ul>
+    <p class="fine-inline">Savings are after the new bank's processing fee and your current bank's foreclosure charge. Final rate depends on the bank's check of your profile.</p>
+
+    <div class="dock">
+      <button class="btn-main" type="button" id="bt-choose">Choose</button>
+    </div>
+  </main>
+
+  <!-- New loan: type -->
+  <main class="screen flow-screen" id="screen-nl-type" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">New loan</span>
+    </header>
+    <h1 class="ask">What do you need the loan for?</h1>
+    <div class="type-grid" id="nl-types"></div>
+  </main>
+
+  <!-- New loan: amount -->
+  <main class="screen flow-screen" id="screen-nl-amount" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title" id="nl-title">Personal loan</span>
+    </header>
+    <h1 class="ask">How much do you need?</h1>
+
+    <label class="amount-wrap">
+      <span class="rupee">₹</span>
+      <input id="nl-amount" type="text" inputmode="numeric" placeholder="0" aria-label="Amount">
+    </label>
+    <div class="chips" id="nl-chips"></div>
+
+    <div class="elig" id="nl-elig">
+      <p class="label">Based on your salary and current EMIs</p>
+      <p class="elig-amt">You can borrow up to about <b id="nl-max">—</b></p>
+      <p class="sub" id="nl-room">—</p>
+      <div class="nl-salary" id="nl-salary" hidden>
+        <label class="mini-field"><span>Your monthly take-home salary</span>
+          <span class="suffix-wrap prefix"><b>₹</b><input id="nl-sal-in" type="text" inputmode="numeric" placeholder="85,000"><i>/ month</i></span></label>
+        <button class="btn-main btn-small" type="button" id="nl-sal-save">Show my limit</button>
+      </div>
+    </div>
+    <p class="err" id="nl-err" role="alert"></p>
+
+    <div class="dock">
+      <button class="btn-main" type="button" id="nl-go">Continue</button>
+    </div>
+  </main>
+
+  <!-- Close faster -->
+  <main class="screen flow-screen" id="screen-pf" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">Close faster</span>
+    </header>
+    <h1 class="ask">How much extra can you pay each month?</h1>
+    <div class="chips chips-big" id="pf-chips" role="radiogroup" aria-label="Extra per month"></div>
+
+    <div class="pf-result">
+      <div class="pf-compare">
+        <div><p class="label">Paying as usual</p><p class="mid" id="pf-usual">—</p></div>
+        <div class="pf-arrow" aria-hidden="true">→</div>
+        <div class="right"><p class="label">With extra</p><p class="mid pf-new" id="pf-new">—</p></div>
+      </div>
+      <div class="pf-save"><span>Interest you save</span><b id="pf-saved">—</b></div>
+      <p class="label pf-order-label">Pay off in this order</p>
+      <ol class="pf-order" id="pf-order"></ol>
+      <p class="fine-inline">Highest interest rate first. Once a loan closes, its EMI goes to the next one.</p>
+    </div>
+
+    <div class="dock">
+      <button class="btn-main" type="button" id="pf-go">Help me follow this plan</button>
+    </div>
+  </main>
+
+  <!-- Call me -->
+  <main class="screen flow-screen" id="screen-cb" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">Call me</span>
+    </header>
+    <h1 class="ask">When should we call?</h1>
+    <ul class="pick-list radio-list" id="cb-times" role="radiogroup" aria-label="Call time"></ul>
+
+    <p class="field-label cb-about">What's it about?</p>
+    <div class="chips" id="cb-topics"></div>
+
+    <div class="dock">
+      <button class="btn-main" type="button" id="cb-go">Continue</button>
+    </div>
+  </main>
+
+  <!-- CIBIL score -->
+  <main class="screen flow-screen" id="screen-score" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">CIBIL score</span>
+    </header>
+
+    <div class="gauge-card" id="sc-gauge" hidden>
+      <svg class="gauge" viewBox="0 0 200 112" aria-hidden="true">
+        <path d="M16 100a84 84 0 01168 0" fill="none" stroke="#ececf0" stroke-width="14" stroke-linecap="round"/>
+        <path id="sc-arc" d="M16 100a84 84 0 01168 0" fill="none" stroke="#1d6b34" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/>
+      </svg>
+      <p class="gauge-num" id="sc-num">—</p>
+      <p class="gauge-band" id="sc-band">—</p>
+      <div class="gauge-scale"><span>300</span><span>900</span></div>
+      <p class="sub" id="sc-meaning"></p>
+      <p class="fine-inline" id="sc-when"></p>
+    </div>
+
+    <h1 class="ask" id="sc-ask">Get your CIBIL score</h1>
+
+    <ol class="steps">
+      <li>
+        <b>Get your free report from CIBIL</b>
+        <span>Everyone gets one full report free each year. Checking your own score doesn't lower it.</span>
+        <a class="btn-out" id="sc-open" href="https://www.cibil.com/freecibilscore" target="_blank" rel="noopener">
+          Open CIBIL
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M18 14v4a1 1 0 01-1 1H6a1 1 0 01-1-1V7a1 1 0 011-1h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </li>
+      <li>
+        <b>Download the report PDF</b>
+        <span>In myCIBIL, go to My Account, then Get your Free Report, and save the PDF.</span>
+      </li>
+      <li>
+        <b>Add it to Samvaad</b>
+        <span>Upload the PDF so we can find you the right bank, or just type your score.</span>
+        <label class="btn-upload">
+          <input type="file" id="sc-file" accept="application/pdf" hidden>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span id="sc-file-name">Upload CIBIL report (PDF)</span>
+        </label>
+        <div class="score-input">
+          <label class="input-wrap">
+            <span class="sr">Your CIBIL score</span>
+            <input id="sc-input" type="text" inputmode="numeric" maxlength="3" placeholder="Or type your score">
+          </label>
+          <button class="btn-main btn-save" type="button" id="sc-save">Save</button>
+        </div>
+        <div class="sc-pass" id="sc-pass" hidden>
+          <label class="mini-field"><span>Report password</span>
+            <input id="sc-pass-in" type="text" autocomplete="off" placeholder="Often your date of birth, e.g. 01011995"></label>
+          <button class="btn-main btn-small" type="button" id="sc-pass-go">Open report</button>
+        </div>
+        <p class="ok-msg" id="sc-msg" role="status"></p>
+        <p class="err" id="sc-err" role="alert"></p>
+      </li>
+    </ol>
+    <p class="fine-inline">Your report stays private. Only the Samvaad team sees it, to match you with banks. We never share it without asking you.</p>
+  </main>
+
+  <!-- Reading the CIBIL report -->
+  <main class="screen flow-screen" id="screen-read" data-screen hidden>
+    <div class="reading">
+      <span class="spinner" aria-hidden="true"></span>
+      <h1 class="ask">Reading your report</h1>
+      <ul class="read-steps" id="read-steps">
+        <li>Opening the PDF</li>
+        <li>Finding your score</li>
+        <li>Finding your open loans and cards</li>
+      </ul>
+    </div>
+  </main>
+
+  <!-- Loans found in the report -->
+  <main class="screen flow-screen" id="screen-found" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">From your CIBIL report</span>
+    </header>
+
+    <div class="found-head">
+      <span class="score-ring good" id="f-ring"><span id="f-score">—</span></span>
+      <div>
+        <h1 class="ask" id="f-title">We found 3 open loans</h1>
+        <p class="sub" id="f-sub">Check them, add anything missing, and you're done.</p>
+      </div>
+    </div>
+
+    <ul class="found-list" id="f-list"></ul>
+    <p class="fine-inline">Closed loans aren't shown. CIBIL reports don't always include interest rates or EMIs, so add them where asked. Your bank's app or loan statement has them.</p>
+
+    <div class="dock">
+      <button class="btn-main" type="button" id="f-save">Add 3 loans</button>
+    </div>
+  </main>
+
+  <!-- Add a loan: 1 type -->
+  <main class="screen flow-screen" id="screen-add-type" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">Add a loan</span>
+      <span class="step-count">1 of 3</span>
+    </header>
+    <button class="shortcut" type="button" id="add-cibil">
+      <span class="shortcut-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M7 3.5h7l4 4V20a.5.5 0 01-.5.5h-10.5A.5.5 0 016.5 20V4a.5.5 0 01.5-.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.5 13.5l2 2 3.5-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="shortcut-body"><b>Skip the typing</b><span>Upload your CIBIL report and we'll add all your loans</span></span>
+      <svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <h1 class="ask">What kind of loan is it?</h1>
+    <div class="type-grid" id="add-types"></div>
+  </main>
+
+  <!-- Add a loan: 2 lender -->
+  <main class="screen flow-screen" id="screen-add-lender" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title" id="add-lender-title">Personal loan</span>
+      <span class="step-count">2 of 3</span>
+    </header>
+    <h1 class="ask">Which bank or lender?</h1>
+    <label class="input-wrap search-input">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <span class="sr">Search lenders</span>
+      <input id="add-lender-q" type="text" autocomplete="off" placeholder="Search, e.g. HDFC">
+    </label>
+    <ul class="lender-list" id="add-lenders"></ul>
+  </main>
+
+  <!-- Add a loan: 3 details -->
+  <main class="screen flow-screen" id="screen-add-details" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title" id="add-details-title">Personal loan · HDFC Bank</span>
+      <span class="step-count">3 of 3</span>
+    </header>
+
+    <p class="field-label big-label">Amount left to pay</p>
+    <label class="amount-wrap">
+      <span class="rupee">₹</span>
+      <input id="add-amount" type="text" inputmode="numeric" placeholder="0" aria-label="Amount left to pay">
+    </label>
+    <p class="hint-line">Check your bank app or latest loan statement for "principal outstanding".</p>
+
+    <div class="two-up">
+      <label class="mini-field">
+        <span>Interest rate</span>
+        <span class="suffix-wrap"><input id="add-rate" type="text" inputmode="decimal" placeholder="14"><i>% a year</i></span>
+      </label>
+      <label class="mini-field">
+        <span>EMI</span>
+        <span class="suffix-wrap prefix"><b>₹</b><input id="add-emi" type="text" inputmode="numeric" placeholder="10,500"><i>/ month</i></span>
+      </label>
+    </div>
+
+    <div class="preview" id="add-preview" hidden>
+      <div class="preview-row"><span>Closes in</span><b id="pv-close">—</b></div>
+      <div class="preview-row"><span>Interest still to pay</span><b id="pv-int">—</b></div>
+      <p class="preview-note" id="pv-note"></p>
+    </div>
+    <p class="err" id="add-err" role="alert"></p>
+
+    <div class="dock">
+      <button class="btn-main" type="button" id="add-save">Add loan</button>
+    </div>
+  </main>
+
+  <!-- Ask Ritu -->
+  <div class="screen chat" id="screen-ritu" data-screen hidden>
+    <header class="chat-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="ritu-avatar" aria-hidden="true">R</span>
+      <span class="chat-who"><b>Ritu</b><span>Your loan advisor · replies in seconds</span></span>
+    </header>
+
+    <div class="chat-log" id="chat-log" aria-live="polite"></div>
+
+    <div class="chat-foot">
+      <div class="suggest" id="chat-suggest"></div>
+      <form class="composer" id="chat-form" autocomplete="off">
+        <label class="sr" for="chat-input">Message Ritu</label>
+        <input id="chat-input" type="text" placeholder="Ask about your loans…" maxlength="500">
+        <button class="mic" type="button" id="chat-mic" aria-label="Speak">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="9" y="3.5" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5.5 11.5a6.5 6.5 0 0013 0M12 18v2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button class="send" type="submit" id="chat-send" aria-label="Send" disabled>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </form>
+      <p class="chat-fine">Ritu uses your app's numbers. Final rates depend on the bank.</p>
+    </div>
+  </div>
+
+  <!-- 6. Confirm (shared by every service) -->
+  <main class="screen flow-screen" id="screen-bt-confirm" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">Confirm</span>
+    </header>
+
+    <div class="summary" id="bt-summary"></div>
+
+    <form id="confirm-form" novalidate>
+      <label class="field-label" for="c-phone">Phone number for our call</label>
+      <div class="input-wrap phone-wrap">
+        <span class="cc">+91</span>
+        <input id="c-phone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="10" placeholder="10-digit mobile number">
+      </div>
+      <label class="field-label" for="c-note">Anything we should know? <span class="opt">Optional</span></label>
+      <div class="input-wrap">
+        <input id="c-note" type="text" maxlength="200" placeholder="e.g. best time to call">
+      </div>
+      <p class="err" id="c-err" role="alert"></p>
+
+      <ul class="what-next" id="c-next"></ul>
+
+      <div class="dock">
+        <button class="btn-main" type="submit" id="c-btn">Confirm request</button>
+      </div>
+    </form>
+  </main>
+
+  <!-- 7. Request placed: tracker -->
+  <main class="screen flow-screen" id="screen-bt-done" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" id="done-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+
+    <div class="done-head">
+      <span class="tick" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="28" height="28"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <h1 class="ask">Request received</h1>
+      <p class="sub" id="done-sub"></p>
+    </div>
+
+    <div class="exec-card">
+      <span class="exec-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      </span>
+      <span>
+        <b>Our executive will be in touch</b>
+        <span>A Samvaad executive will call you <span id="exec-when">within one working day</span> on the number you gave. Keep your phone handy.</span>
+      </span>
+    </div>
+
+    <ol class="track" id="done-track"></ol>
+
+    <div class="dock">
+      <button class="btn-main" type="button" id="done-home">Back to home</button>
+    </div>
+  </main>
+
+
+  <!-- ====================================================== ADMIN MODE -->
+  <div class="shell" id="screen-admin" data-screen hidden>
+    <main class="page" id="atab-req">
+      <header class="home-top"><h1 class="tab-title">Requests</h1><span class="adm-mode">Admin</span></header>
+      <div class="chips adm-chips" id="ad-req-filters" role="group" aria-label="Filter by status"></div>
+      <ul class="ad-list" id="ad-req-list"></ul>
+      <p class="empty" id="ad-req-empty" hidden>No requests here. New ones appear the moment a customer taps Confirm.</p>
+    </main>
+
+    <main class="page" id="atab-act" hidden>
+      <header class="home-top"><h1 class="tab-title">Activity</h1><span class="live"><i></i>Live</span></header>
+      <div class="chips adm-chips" id="ad-feed-filters" role="group" aria-label="Filter activity"></div>
+      <ol class="ad-feed" id="ad-feed"></ol>
+      <p class="empty" id="ad-feed-empty" hidden>Nothing yet. Everything customers do shows up here.</p>
+      <button class="btn-link" type="button" id="ad-feed-more" hidden>Show older</button>
+    </main>
+
+    <main class="page" id="atab-cust" hidden>
+      <header class="home-top"><h1 class="tab-title">Customers</h1><span class="adm-count" id="ad-cust-count"></span></header>
+      <label class="input-wrap search-input">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <span class="sr">Search customers</span>
+        <input id="ad-cust-q" type="search" autocomplete="off" placeholder="Name, phone, email, company">
+      </label>
+      <ul class="ad-list" id="ad-cust-list"></ul>
+      <p class="empty" id="ad-cust-empty" hidden>No customers yet.</p>
+    </main>
+
+    <main class="page" id="atab-more" hidden>
+      <header class="home-top"><h1 class="tab-title">Admin</h1></header>
+      <div class="ad-figs">
+        <div><b id="af-new">—</b><span>New requests</span></div>
+        <div><b id="af-today">—</b><span>Active today</span></div>
+        <div><b id="af-cust">—</b><span>Customers</span></div>
+        <div><b id="af-loans">—</b><span>Loans added</span></div>
+      </div>
+      <p class="ad-ai" id="af-ai"></p>
+      <ul class="svc-list menu">
+        <li><a class="svc" href="/admin/export.xlsx" download><span class="svc-body"><b>Download Excel</b><span>Every request, customer, loan and activity</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+        <li><button class="svc" type="button" id="ad-open-banks"><span class="svc-body"><b>Bank rates</b><span>The lenders and rates customers see</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" id="ad-customer-view"><span class="svc-body"><b>Customer view</b><span>See the app the way customers do</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><a class="svc" href="/admin"><span class="svc-body"><b>Admin on the website</b><span>The same admin on a bigger screen</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+      </ul>
+      <button class="btn-signout" type="button" id="ad-sign-out">Sign out</button>
+    </main>
+
+    <nav class="tabbar" aria-label="Admin">
+      <button class="tabbtn is-on" type="button" data-atab="req">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 6.5A1.5 1.5 0 015.5 5h13A1.5 1.5 0 0120 6.5v9a1.5 1.5 0 01-1.5 1.5H9l-5 3.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <span>Requests</span><i class="tab-dot" id="ad-req-badge" hidden></i>
+      </button>
+      <button class="tabbtn" type="button" data-atab="act">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Activity</span><i class="tab-dot" id="ad-act-badge" hidden></i>
+      </button>
+      <button class="tabbtn" type="button" data-atab="cust">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2.5 19.5a6.5 6.5 0 0113 0M16 5.2a3.5 3.5 0 010 6.6M18 13.6a6.5 6.5 0 013.5 5.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Customers</span>
+      </button>
+      <button class="tabbtn" type="button" data-atab="more">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="18.5" cy="12" r="1.8" fill="currentColor"/></svg>
+        <span>More</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Admin: one request -->
+  <main class="screen flow-screen" id="screen-adm-req" data-screen hidden>
+    <header class="top bar-top"><button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button><span class="top-title" id="ar-title">Request</span></header>
+    <div class="ar-who" id="ar-who"></div>
+    <div class="ar-actions" id="ar-actions"></div>
+    <div class="summary" id="ar-summary"></div>
+    <p class="field-label">Status</p>
+    <div class="seg" id="ar-status" role="radiogroup" aria-label="Status"></div>
+    <p class="field-label ar-note-label">Your notes <span class="opt">Only you see these</span></p>
+    <textarea class="ar-note" id="ar-note" rows="3" maxlength="2000" placeholder="e.g. Called, wants to compare with SBI. Docs on Monday."></textarea>
+    <p class="err" id="ar-err" role="alert"></p>
+    <button class="btn-main btn-small" type="button" id="ar-save-note">Save note</button>
+    <button class="btn-link" type="button" id="ar-open-cust">View customer →</button>
+  </main>
+
+  <!-- Admin: one customer -->
+  <main class="screen flow-screen" id="screen-adm-cust" data-screen hidden>
+    <header class="top bar-top"><button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button><span class="top-title">Customer</span></header>
+    <div id="ac-body"></div>
+  </main>
+
+  <!-- Admin: bank rates -->
+  <main class="screen flow-screen" id="screen-adm-banks" data-screen hidden>
+    <header class="top bar-top"><button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button><span class="top-title">Bank rates</span></header>
+    <p class="tab-lede">Only list lenders you're tied up with. Customers see these as "from" rates, and every saving is worked out from them.</p>
+    <ul class="ad-list" id="ab-list"></ul>
+    <div class="dock"><button class="btn-main" type="button" id="ab-add">Add a lender</button></div>
+  </main>
+
+  <main class="screen flow-screen" id="screen-adm-bank" data-screen hidden>
+    <header class="top bar-top"><button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button><span class="top-title" id="abf-title">Lender</span></header>
+    <form class="details abf" id="abf" novalidate>
+      <label class="mini-field"><span>Bank or lender</span><input id="abf-name" type="text" maxlength="60" placeholder="e.g. IDFC FIRST Bank"></label>
+      <label class="mini-field"><span>Loan type</span><select id="abf-product"></select></label>
+      <div class="two-up">
+        <label class="mini-field"><span>From %</span><input id="abf-min" type="text" inputmode="decimal" placeholder="10.5"></label>
+        <label class="mini-field"><span>Up to %</span><input id="abf-max" type="text" inputmode="decimal" placeholder="14"></label>
+      </div>
+      <div class="two-up">
+        <label class="mini-field"><span>Processing fee %</span><input id="abf-fee" type="text" inputmode="decimal" placeholder="1"></label>
+        <label class="mini-field"><span>Max months</span><input id="abf-tenure" type="text" inputmode="numeric" placeholder="60"></label>
+      </div>
+      <label class="found-toggle"><input type="checkbox" id="abf-active" checked> Show this offer to customers</label>
+      <p class="err" id="abf-err" role="alert"></p>
+    </form>
+    <button class="btn-link abf-del" type="button" id="abf-delete" hidden>Delete this lender</button>
+    <div class="dock"><button class="btn-main" type="button" id="abf-save">Save</button></div>
+  </main>
+
+  <!-- Call us sheet -->
+  <div class="sheet-back" id="call-sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="call-title">
+      <span class="sheet-grab" aria-hidden="true"></span>
+      <h2 id="call-title">Talk to a Samvaad executive</h2>
+      <p class="sub">Free help with your loans, balance transfers and new loans.</p>
+      <a class="sheet-opt" id="call-now" href="tel:+910000000000">
+        <span class="exec-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
+        <span><b>Call now</b><span id="call-num">+91 00000 00000</span></span>
+      </a>
+      <a class="sheet-opt" id="call-wa" href="https://wa.me/910000000000" target="_blank" rel="noopener">
+        <span class="exec-icon wa" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M4.5 19.5l1.2-3.6A8 8 0 1112 20a8 8 0 01-3.9-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 9.5c.3 2 2.4 4.2 4.6 4.6l1.1-1.2 1.8.8c-.2 1-1 1.8-2 1.8-3.3-.3-6-3-6.3-6.3 0-1 .8-1.8 1.8-2l.8 1.8z" fill="currentColor"/></svg></span>
+        <span><b>Chat on WhatsApp</b><span>Usually replies in a few minutes</span></span>
+      </a>
+      <p class="sheet-hours">Monday to Saturday, 9 am to 7 pm</p>
+      <button class="btn-link sheet-close" type="button" id="call-close">Not now</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script id="cfg" type="application/json">{{ cfg | tojson }}</script>
+  {% if cfg.mode == 'supabase' %}<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>{% endif %}
+  <script src="{{ url_for('static', filename='m/app.js') }}?v={{ v }}"></script>
+  <script src="{{ url_for('static', filename='m/admin.js') }}?v={{ v }}"></script>
+</body>
+</html>

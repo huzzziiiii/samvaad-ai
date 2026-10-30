@@ -141,20 +141,21 @@ def build_workbook(store):
             p.get("city") or "", _num(p.get("salary")), len(mine),
             sum(_num(l.get("outstanding")) or 0 for l in mine) or None,
             sum(_num(l.get("emi")) or 0 for l in mine) or None,
-            asked.get(uid, 0), _when(p.get("created_at")),
+            asked.get(uid, 0), p.get("cibil_score"), "Yes" if p.get("cibil_report") else "",
+            _when(p.get("created_at")), _when(p.get("last_seen")),
         ])
     _sheet(wb, "Customers", [
         ("Name", 22), ("Phone", 16), ("Email", 28), ("Employer", 20), ("City", 14),
         ("Salary / month", 15), ("Loans", 8), ("Total left to pay", 18), ("Total EMI / month", 18),
-        ("Requests", 10), ("Joined (IST)", 20),
-    ], rows, money_cols=(6, 8, 9), date_cols=(11,))
+        ("Requests", 10), ("CIBIL score", 11), ("CIBIL report", 12), ("Joined (IST)", 20), ("Last active (IST)", 20),
+    ], rows, money_cols=(6, 8, 9), date_cols=(13, 14))
 
     # Loans: every loan customers added
     rows = []
     for l in loans:
         p = profiles.get(l.get("user_id"), {})
         rows.append([
-            p.get("name") or "", p.get("email") or "", L.LOAN_TYPES.get(l.get("type"), l.get("type") or ""),
+            p.get("name") or "", p.get("email") or "", L.LOAN_TYPES.get(l.get("type"), l.get("type") or "") + (" (CIBIL)" if l.get("source") == "cibil" else ""),
             l.get("lender") or "", _num(l.get("outstanding")), _num(l.get("rate")), _num(l.get("emi")),
             l.get("months_left"), _when(l.get("created_at")),
         ])
@@ -162,6 +163,19 @@ def build_workbook(store):
         ("Customer", 22), ("Email", 28), ("Loan type", 18), ("Lender", 20), ("Left to pay", 15),
         ("Rate % / year", 13), ("EMI / month", 14), ("Months left", 12), ("Added (IST)", 20),
     ], rows, money_cols=(5, 7), date_cols=(9,))
+
+    # Activity: everything customers did (latest 5,000)
+    rows = []
+    try:
+        events = store.admin_events(5000)
+    except Exception:
+        events = []
+    for e in events:
+        rows.append([_when(e.get("created_at")), e.get("customer_name") or "", e.get("customer_phone") or "",
+                     e.get("customer_email") or "", e.get("label") or e.get("kind"), e.get("summary") or ""])
+    _sheet(wb, "Activity", [
+        ("When (IST)", 20), ("Name", 22), ("Phone", 16), ("Email", 28), ("What", 22), ("Details", 70),
+    ], rows, date_cols=(1,))
 
     buf = io.BytesIO()
     wb.save(buf)

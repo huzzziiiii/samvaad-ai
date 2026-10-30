@@ -149,7 +149,10 @@ def clean_loan(raw):
     rate = num("rate", "Interest rate", 0)
     if rate > 60:
         raise ValueError("Interest rate looks too high. Enter the yearly rate, e.g. 14 for 14%.")
-    payment = num("emi", "Monthly EMI", 1)
+    payment = num("emi", "Monthly EMI", 1, required=loan_type != "credit_card")
+    if payment is None:
+        # Credit cards have no EMI: use the usual minimum due (5%, at least ₹200).
+        payment = max(200.0, outstanding * 0.05)
     months = num("months_left", "Months left", 1, required=False)
     foreclosure = num("foreclosure_pct", "Foreclosure charge", 0, required=False)
     if foreclosure is None:
@@ -166,6 +169,7 @@ def clean_loan(raw):
         "emi": round(payment, 2),
         "months_left": int(months) if months else None,
         "foreclosure_pct": round(foreclosure, 2),
+        "source": "cibil" if raw.get("source") == "cibil" else "typed",
     }
 
 

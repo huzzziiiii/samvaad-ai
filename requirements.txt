@@ -8,3 +8,5 @@ numpy
 sounddevice
 soundfile
 openpyxl
+pypdf
+cryptography

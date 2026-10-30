@@ -183,6 +183,7 @@ def build_context(profile, loans, offers):
 
     return {
         "monthly_take_home_salary": L.inr(salary) if salary else "not given",
+        "cibil_score": (profile or {}).get("cibil_score") or "not given",
         "summary": {
             "number_of_loans": ov["count"],
             "total_outstanding": L.inr(ov["total_outstanding"]),
@@ -251,7 +252,11 @@ def ask(message, history, profile, loans, offers, voice=False):
     if p == "none":
         return rules_reply(context), "rules"
     fn = {"gemini": _gemini, "claude": _claude, "sarvam": _sarvam}[p]
-    reply = fn(system, history, message)
+    try:
+        reply = fn(system, history, message)
+    except Exception:
+        # The AI is down or rate-limited: still answer from the app's numbers.
+        return rules_reply(context), "rules"
     if not reply:
-        raise AdvisorError("Ritu didn't have an answer for that. Try asking in a different way.")
+        return rules_reply(context), "rules"
     return reply, p

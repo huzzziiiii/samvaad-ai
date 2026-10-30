@@ -26,8 +26,23 @@ REQUEST_KINDS = {
 }
 REQUEST_STATUSES = ["new", "contacted", "in_progress", "done", "closed"]
 
-PROFILE_FIELDS = ("name", "email", "phone", "salary", "employer", "city")
-LOAN_FIELDS = ("type", "lender", "outstanding", "rate", "emi", "months_left", "foreclosure_pct")
+PROFILE_FIELDS = ("name", "email", "phone", "salary", "employer", "city",
+                  "cibil_score", "cibil_date", "cibil_report", "last_seen")
+LOAN_FIELDS = ("type", "lender", "outstanding", "rate", "emi", "months_left", "foreclosure_pct", "source")
+
+# What customers did, as shown in the admin activity feed.
+EVENT_KINDS = {
+    "signed_up": "Signed up",
+    "signed_in": "Signed in",
+    "details": "Updated details",
+    "loan_added": "Added a loan",
+    "loan_updated": "Edited a loan",
+    "loan_removed": "Removed a loan",
+    "cibil_score": "Added CIBIL score",
+    "cibil_report": "Uploaded CIBIL report",
+    "ritu": "Asked Ritu",
+    "request": "Sent a request",
+}
 BANK_FIELDS = ("name", "product", "rate_min", "rate_max", "processing_fee_pct", "max_tenure_months", "active", "notes")
 
 # Placeholder offers so the app works on day one. They are deliberately not
@@ -52,6 +67,14 @@ def new_id():
     return uuid.uuid4().hex
 
 
+def _attach_people(rows, people):
+    for r in rows:
+        p = people.get(r["user_id"], {})
+        r.update(customer_name=p.get("name"), customer_email=p.get("email"), customer_phone=p.get("phone"),
+                 label=EVENT_KINDS.get(r.get("kind"), r.get("kind")))
+    return rows
+
+
 def _pick(data, fields):
     return {k: data[k] for k in fields if k in data}
 
@@ -74,6 +97,11 @@ class SQLiteStore:
         id text primary key, user_id text not null, kind text, details text,
         status text, admin_note text, created_at text, updated_at text);
     create index if not exists requests_user on requests(user_id);
+    create table if not exists events (
+        id text primary key, user_id text not null, kind text, summary text,
+        details text, created_at text);
+    create index if not exists events_created on events(created_at);
+    create index if not exists events_user on events(user_id, created_at);
     create table if not exists banks (
         id text primary key, name text, product text, rate_min real, rate_max real,
         processing_fee_pct real, max_tenure_months integer, active integer,
@@ -86,6 +114,12 @@ class SQLiteStore:
         self._lock = threading.Lock()
         with self._conn() as c:
             c.executescript(self.SCHEMA)
+            # older local databases: add the newer columns
+            for table, col, kind in (("profiles", "cibil_score", "integer"), ("profiles", "cibil_date", "text"),
+                                     ("profiles", "cibil_report", "text"), ("profiles", "last_seen", "text"),
+                                     ("loans", "source", "text")):
+                if col not in [r[1] for r in c.execute(f"pragma table_info({table})")]:
+                    c.execute(f"alter table {table} add column {col} {kind}")
             if not c.execute("select 1 from banks limit 1").fetchone():
                 for name, product, lo, hi, fee, tenure in SAMPLE_BANKS:
                     c.execute("insert into banks values (?,?,?,?,?,?,?,?,?,?)",
@@ -118,9 +152,9 @@ class SQLiteStore:
                 self._exec(f"update profiles set {sets}, updated_at=? where user_id=?",
                            (*data.values(), now(), user_id))
         else:
-            row = {k: data.get(k) for k in PROFILE_FIELDS}
-            self._exec("insert into profiles values (?,?,?,?,?,?,?,?,?)",
-                       (user_id, *row.values(), now(), now()))
+            cols = ["user_id", *PROFILE_FIELDS, "created_at", "updated_at"]
+            vals = [user_id, *[data.get(k) for k in PROFILE_FIELDS], now(), now()]
+            self._exec(f"insert into profiles ({','.join(cols)}) values ({','.join('?' * len(cols))})", vals)
         return self.get_profile(user_id)
 
     # loans
@@ -129,9 +163,10 @@ class SQLiteStore:
 
     def add_loan(self, user_id, loan):
         loan_id = new_id()
-        row = {k: loan.get(k) for k in LOAN_FIELDS}
-        self._exec("insert into loans values (?,?,?,?,?,?,?,?,?,?,?)",
-                   (loan_id, user_id, *row.values(), now(), now()))
+        cols = ["id", "user_id", *LOAN_FIELDS, "created_at", "updated_at"]
+        vals = [loan_id, user_id, *[loan.get(k) for k in LOAN_FIELDS], now(), now()]
+        vals[cols.index("source")] = loan.get("source") or "typed"
+        self._exec(f"insert into loans ({','.join(cols)}) values ({','.join('?' * len(cols))})", vals)
         return loan_id
 
     def update_loan(self, user_id, loan_id, loan):
@@ -189,6 +224,42 @@ class SQLiteStore:
 
     def admin_all_requests(self):
         return self._decode(self._rows("select * from requests order by created_at desc"))
+
+    # activity log
+    def log_event(self, user_id, kind, summary="", details=None):
+        self._exec("insert into events (id, user_id, kind, summary, details, created_at) values (?,?,?,?,?,?)",
+                   (new_id(), user_id, kind, summary[:300], json.dumps(details or {}, ensure_ascii=False), now()))
+        self._exec("update profiles set last_seen=? where user_id=?", (now(), user_id))
+
+    def admin_events(self, limit=100, user_id=None, before=None):
+        sql, args = "select * from events where 1=1", []
+        if user_id:
+            sql += " and user_id=?"; args.append(user_id)
+        if before:
+            sql += " and created_at<?"; args.append(before)
+        rows = self._rows(sql + " order by created_at desc limit ?", (*args, int(limit)))
+        return _attach_people(self._decode(rows), {p["user_id"]: p for p in self.admin_all_profiles()})
+
+    def admin_customer(self, user_id):
+        p = self.get_profile(user_id)
+        if not p:
+            return None
+        return {"profile": p, "loans": self.list_loans(user_id), "requests": self.list_requests(user_id),
+                "events": self.admin_events(200, user_id)}
+
+    # CIBIL reports (local: saved under data/reports)
+    def save_report(self, user_id, data):
+        folder = os.path.join(WRITE_DATA, "reports")
+        os.makedirs(folder, exist_ok=True)
+        name = f"{user_id}/{new_id()}.pdf"
+        os.makedirs(os.path.join(folder, user_id), exist_ok=True)
+        with open(os.path.join(folder, name), "wb") as f:
+            f.write(data)
+        return name
+
+    def read_report(self, path):
+        with open(os.path.join(WRITE_DATA, "reports", path), "rb") as f:
+            return f.read()
 
     # banks
     def list_banks(self, active_only=False):
@@ -335,6 +406,53 @@ class SupabaseStore:
 
     def admin_all_requests(self):
         return self._all("requests", "created_at.desc")
+
+    # activity log
+    def log_event(self, user_id, kind, summary="", details=None):
+        self._req("POST", "events", body={"id": new_id(), "user_id": user_id, "kind": kind,
+                                          "summary": summary[:300], "details": details or {}})
+        self._req("PATCH", "profiles", {"user_id": f"eq.{user_id}"}, {"last_seen": now()})
+
+    def admin_events(self, limit=100, user_id=None, before=None):
+        params = {"select": "*", "order": "created_at.desc", "limit": str(int(limit))}
+        if user_id:
+            params["user_id"] = f"eq.{user_id}"
+        if before:
+            params["created_at"] = f"lt.{before}"
+        rows = self._req("GET", "events", params)
+        ids = sorted({r["user_id"] for r in rows})
+        people = {}
+        if ids:
+            for p in self._req("GET", "profiles", {"user_id": f"in.({','.join(ids)})", "select": "user_id,name,email,phone"}):
+                people[p["user_id"]] = p
+        return _attach_people(rows, people)
+
+    def admin_customer(self, user_id):
+        p = self.get_profile(user_id)
+        if not p:
+            return None
+        return {"profile": p, "loans": self.list_loans(user_id), "requests": self.list_requests(user_id),
+                "events": self.admin_events(200, user_id)}
+
+    # CIBIL reports (Supabase Storage, private bucket "reports")
+    def _storage(self):
+        return self.base.replace("/rest/v1", "/storage/v1")
+
+    def save_report(self, user_id, data):
+        path = f"{user_id}/{new_id()}.pdf"
+        headers = {k: v for k, v in self.headers.items() if k != "Content-Type"}
+        headers["Content-Type"] = "application/pdf"
+        r = requests.post(f"{self._storage()}/object/reports/{path}", data=data, headers=headers, timeout=30)
+        if r.status_code >= 400:
+            raise SupabaseError(f"Report upload failed ({r.status_code}): {r.text[:200]}")
+        return path
+
+    def read_report(self, path):
+        headers = {k: v for k, v in self.headers.items() if k != "Content-Type"}
+        r = requests.get(f"{self._storage()}/object/reports/{path}", headers=headers, timeout=30)
+        if r.status_code >= 400:
+            raise SupabaseError(f"Report download failed ({r.status_code})")
+        return r.content
 
     # banks
     def list_banks(self, active_only=False):

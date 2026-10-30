@@ -16,14 +16,17 @@
     <a class="btn btn-quiet" href="{{ url_for('admin.export_excel') }}" download>Download Excel</a>
   </div>
 
-  <dl class="figures figures--three" id="adm-figures">
+  <dl class="figures figures--four" id="adm-figures">
     <div><dt>New requests</dt><dd id="c-new">—</dd></div>
+    <div><dt>Active today</dt><dd id="c-today">—</dd></div>
     <div><dt>Customers</dt><dd id="c-cust">—</dd></div>
     <div><dt>Loans added</dt><dd id="c-loans">—</dd></div>
   </dl>
 
   <nav class="tabs app-tabs adm-tabs" role="tablist" aria-label="Admin sections">
     <button class="tab" role="tab" id="atab-requests" aria-controls="apanel-requests" aria-selected="true">Requests</button>
+    <button class="tab" role="tab" id="atab-activity" aria-controls="apanel-activity" aria-selected="false" tabindex="-1">Activity <span class="tab-badge" id="act-badge" hidden></span></button>
+    <button class="tab" role="tab" id="atab-customers" aria-controls="apanel-customers" aria-selected="false" tabindex="-1">Customers</button>
     <button class="tab" role="tab" id="atab-banks" aria-controls="apanel-banks" aria-selected="false" tabindex="-1">Bank rates</button>
     <button class="tab" role="tab" id="atab-tools" aria-controls="apanel-tools" aria-selected="false" tabindex="-1">Calling tools</button>
   </nav>
@@ -33,6 +36,44 @@
     <ul class="adm-reqs" id="adm-reqs"></ul>
     <p class="empty-inline" id="adm-reqs-empty" hidden>No requests here yet. When a customer taps "Get this done", it lands here.</p>
   </section>
+
+  <section class="panel" id="apanel-activity" role="tabpanel" aria-labelledby="atab-activity" hidden>
+    <div class="feed-head">
+      <p class="feed-live"><span class="live-dot" aria-hidden="true"></span> Live. Updates every 20 seconds.</p>
+      <div class="adm-filters" role="group" aria-label="Filter activity" id="feed-filters"></div>
+    </div>
+    <ol class="feed" id="feed"></ol>
+    <p class="empty-inline" id="feed-empty" hidden>Nothing yet. Everything customers do in the app shows up here.</p>
+    <button class="btn btn-quiet btn-small" type="button" id="feed-more" hidden>Show older</button>
+  </section>
+
+  <section class="panel" id="apanel-customers" role="tabpanel" aria-labelledby="atab-customers" hidden>
+    <label class="field cust-search"><span class="visually-hidden">Search customers</span>
+      <input id="cust-q" type="search" placeholder="Search name, phone, email, company"></label>
+    <div class="table-wrap">
+      <table class="custs">
+        <thead><tr>
+          <th scope="col">Customer</th><th scope="col">CIBIL</th><th scope="col">Loans</th><th scope="col">Left to pay</th>
+          <th scope="col">EMI / month</th><th scope="col">Salary</th><th scope="col">Requests</th><th scope="col">Last active</th>
+        </tr></thead>
+        <tbody id="cust-rows"></tbody>
+      </table>
+    </div>
+    <p class="empty-inline" id="cust-empty" hidden>No customers yet.</p>
+  </section>
+
+  <dialog class="cust-dialog" id="cust-dialog" aria-labelledby="cd-name">
+    <div class="cd-inner">
+      <header class="cd-head">
+        <div>
+          <h2 id="cd-name">Customer</h2>
+          <p class="cd-contact" id="cd-contact"></p>
+        </div>
+        <button class="btn btn-quiet btn-small" type="button" id="cd-close">Close</button>
+      </header>
+      <div class="cd-body" id="cd-body"></div>
+    </div>
+  </dialog>
 
   <section class="panel" id="apanel-banks" role="tabpanel" aria-labelledby="atab-banks" hidden>
     <p class="notice">Only list banks you're empanelled with, and keep rates current from their rate cards. Customers see these as "from" rates, and every saving is calculated from them.</p>

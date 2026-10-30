@@ -13,8 +13,9 @@ Two rules keep it trustworthy:
 | Page | For | What it does |
 |---|---|---|
 | `/` | Everyone | Landing page |
-| `/app` | Customers | Overview + payoff plan, Loans, Savings, Ask Ritu, Requests. Installs on phones like an app. |
-| `/admin` | You | Customer requests with status and notes, the bank rate table, the older calling tools |
+| `/app` | Customers | The phone app: sign in, upload a CIBIL report (loans are read automatically), Lower my rate, New loan, Close faster, Call me, Ask Ritu, request tracking, account. Installs on phones like an app. |
+| `/admin` | You | Requests with status and notes, a live Activity feed of everything customers do, Customers (one page each, with their CIBIL report), bank rates, Excel export, the older calling tools |
+| `/classic` | Customers | The first web version of the customer app |
 | `/demo`, `/talk`, `/phone`, `/dashboard` | You | Ritu the AI caller (the original Samvaad AI: Sarvam voice demo, Twilio calls, call log) |
 
 ## Run it on your laptop (no accounts needed)
@@ -112,6 +113,8 @@ public/static/         CSS, JS and self-hosted fonts (Mukta, Tiro Devanagari Hin
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY` | Database and customer accounts |
 | `SUPABASE_GOOGLE_LOGIN` | `1` to show "Continue with Google" (after enabling it in Supabase) |
 | `SECRET_KEY` | Signs the login cookie. Required on Vercel |
+| `SUPPORT_PHONE` | Your number for the app's Call us / WhatsApp buttons, with 91 in front |
+| `CLAUDE_REPORT_MODEL` | Model that reads CIBIL PDFs (defaults to `CLAUDE_MODEL`). Needs `ANTHROPIC_API_KEY` |
 | `ADMIN_EMAILS` | Who can open `/admin` |
 | `SARVAM_API_KEY` | Voice in Ask Ritu, and Ritu's voice in the calling tools |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` | Real phone calls |

@@ -76,3 +76,27 @@ select * from (values
   ('sample-a-business', 'Sample Bank A', 'business',    13.0,  18.0,  2.0,  60, 'Sample rates — replace')
 ) as v(id, name, product, rate_min, rate_max, processing_fee_pct, max_tenure_months, notes)
 where not exists (select 1 from public.banks);
+
+-- ---------------------------------------------------------------- v2 (activity log + CIBIL)
+alter table public.profiles add column if not exists cibil_score integer;
+alter table public.profiles add column if not exists cibil_date date;
+alter table public.profiles add column if not exists cibil_report text;      -- storage path of the uploaded PDF
+alter table public.profiles add column if not exists last_seen timestamptz;
+alter table public.loans add column if not exists source text default 'typed'; -- typed | cibil
+
+create table if not exists public.events (
+  id          text primary key,
+  user_id     text not null references public.profiles(user_id) on delete cascade,
+  kind        text not null,
+  summary     text not null default '',
+  details     jsonb default '{}'::jsonb,
+  created_at  timestamptz default now()
+);
+create index if not exists events_created_idx on public.events(created_at desc);
+create index if not exists events_user_idx on public.events(user_id, created_at desc);
+alter table public.events enable row level security;
+
+-- Private bucket for CIBIL report PDFs (only the server's service key can read it).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('reports', 'reports', false, 5242880, array['application/pdf'])
+on conflict (id) do nothing;
