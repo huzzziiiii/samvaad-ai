@@ -106,3 +106,6 @@ on conflict (id) do nothing;
 alter table public.profiles add column if not exists cibil_report_at timestamptz;
 update public.profiles set cibil_report_at = coalesce(updated_at, now())
  where cibil_report is not null and cibil_report_at is null;
+
+-- ---------------------------------------------------------------- v4 (details page)
+alter table public.profiles add column if not exists age integer check (age is null or (age between 18 and 75));

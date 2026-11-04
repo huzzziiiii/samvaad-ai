@@ -27,7 +27,7 @@ REQUEST_KINDS = {
 REQUEST_STATUSES = ["new", "contacted", "in_progress", "done", "closed"]
 
 PROFILE_FIELDS = ("name", "email", "phone", "salary", "employer", "city",
-                  "cibil_score", "cibil_date", "cibil_report", "cibil_report_at", "last_seen")
+                  "cibil_score", "cibil_date", "cibil_report", "cibil_report_at", "last_seen", "age")
 LOAN_FIELDS = ("type", "lender", "outstanding", "rate", "emi", "months_left", "foreclosure_pct", "source")
 
 # What customers did, as shown in the admin activity feed.
@@ -117,7 +117,7 @@ class SQLiteStore:
             # older local databases: add the newer columns
             for table, col, kind in (("profiles", "cibil_score", "integer"), ("profiles", "cibil_date", "text"),
                                      ("profiles", "cibil_report", "text"), ("profiles", "cibil_report_at", "text"),
-                                     ("profiles", "last_seen", "text"),
+                                     ("profiles", "last_seen", "text"), ("profiles", "age", "integer"),
                                      ("loans", "source", "text")):
                 if col not in [r[1] for r in c.execute(f"pragma table_info({table})")]:
                     c.execute(f"alter table {table} add column {col} {kind}")

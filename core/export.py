@@ -138,7 +138,7 @@ def build_workbook(store):
         mine = by_user.get(uid, [])
         rows.append([
             p.get("name") or "", p.get("phone") or "", p.get("email") or "", p.get("employer") or "",
-            p.get("city") or "", _num(p.get("salary")), len(mine),
+            p.get("city") or "", _num(p.get("salary")), p.get("age"), len(mine),
             sum(_num(l.get("outstanding")) or 0 for l in mine) or None,
             sum(_num(l.get("emi")) or 0 for l in mine) or None,
             asked.get(uid, 0), p.get("cibil_score"), "Yes" if p.get("cibil_report") else "",
@@ -146,9 +146,9 @@ def build_workbook(store):
         ])
     _sheet(wb, "Customers", [
         ("Name", 22), ("Phone", 16), ("Email", 28), ("Employer", 20), ("City", 14),
-        ("Salary / month", 15), ("Loans", 8), ("Total left to pay", 18), ("Total EMI / month", 18),
+        ("Salary / month", 15), ("Age", 7), ("Loans", 8), ("Total left to pay", 18), ("Total EMI / month", 18),
         ("Requests", 10), ("CIBIL score", 11), ("CIBIL report", 12), ("Joined (IST)", 20), ("Last active (IST)", 20),
-    ], rows, money_cols=(6, 8, 9), date_cols=(13, 14))
+    ], rows, money_cols=(6, 9, 10), date_cols=(14, 15))
 
     # Loans: every loan customers added
     rows = []

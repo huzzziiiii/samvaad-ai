@@ -3,7 +3,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var CFG = JSON.parse($("cfg").textContent);
 
-  // Samvaad's support number (digits with 91). Set SUPPORT_PHONE on the server.
+  // Credwise's support number (digits with 91). Set SUPPORT_PHONE on the server.
   var SUPPORT_PHONE = CFG.support_phone || "910000000000";
 
   var fmt = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
@@ -30,7 +30,7 @@
   }
   function busy(btn, on) { if (btn) btn.classList.toggle("is-busy", !!on); }
 
-  // ---- talking to the Samvaad server
+  // ---- talking to the Credwise server
   function api(method, path, body) {
     var o = { method: method, headers: {}, credentials: "same-origin" };
     if (body instanceof FormData) o.body = body;
@@ -292,11 +292,11 @@
       ul.appendChild(li);
     });
 
-    var b = bestSaving();
-    $("saving-block").hidden = !b;
-    if (b) {
-      $("h-saving").textContent = inr(b.o.best.net_saving);
-      $("h-saving-sub").textContent = "by moving your " + typeName(b.t.loan.type).toLowerCase() + " (" + pct(b.t.loan.rate) + ") to " + b.o.bank + ", after all fees";
+    var bb = (D.best_banks || [])[0];
+    $("saving-block").hidden = !bb;
+    if (bb) {
+      $("h-saving").textContent = inr(bb.net_saving);
+      $("h-saving-sub").textContent = "with " + bb.bank + " from " + pct(bb.best_rate) + (bb.emi_saving > 0 ? ", EMI " + inr(bb.emi_saving) + " less a month" : "") + ", after all fees";
     }
     paintScore();
     renderActivity($("h-activity"), activityItems().slice(0, 3));
@@ -313,10 +313,47 @@
     } catch (e) {}
     return !!on;
   }
+  function profileComplete(p) {
+    p = p || {};
+    return !!(p.name && p.age && p.salary && p.employer && /^[6-9]\d{9}$/.test(String(p.phone || "").replace(/\D/g, "").slice(-10)));
+  }
   function landing() {
     if (D && D.is_admin && !customerView() && window.SamvaadAdmin) { window.SamvaadAdmin.start(); return; }
+    if (D && !D.is_admin && !profileComplete(D.profile)) { openDetails(); return; }
     history_ = ["screen-home"]; openHome();
   }
+
+  // ---- Your details: required once, right after sign-in
+  function openDetails() {
+    var p = (D && D.profile) || {}, u = (D && D.user) || {};
+    $("dt-name").value = p.name || u.name || "";
+    $("dt-phone").value = String(p.phone || "").replace(/\D/g, "").slice(-10);
+    $("dt-age").value = p.age || "";
+    $("dt-salary").value = p.salary ? fmt.format(p.salary) : "";
+    $("dt-company").value = p.employer || "";
+    $("dt-err").textContent = "";
+    history_ = ["screen-details"]; show("screen-details"); window.scrollTo(0, 0);
+  }
+  $("dt-phone").addEventListener("input", function () { this.value = this.value.replace(/\D/g, "").slice(0, 10); });
+  $("dt-age").addEventListener("input", function () { this.value = this.value.replace(/\D/g, "").slice(0, 2); });
+  $("dt-salary").addEventListener("input", function () { var v = Number(this.value.replace(/\D/g, "")); this.value = v ? fmt.format(v) : ""; });
+  $("dt-out").addEventListener("click", function () { signOut(); });
+  $("dt-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = $("dt-name").value.trim(), ph = $("dt-phone").value, age = Number($("dt-age").value),
+        salary = Number($("dt-salary").value.replace(/\D/g, "")), company = $("dt-company").value.trim();
+    var bad = !name ? ["dt-name", "Enter your full name."]
+      : !/^[6-9]\d{9}$/.test(ph) ? ["dt-phone", "Enter your 10-digit mobile number."]
+      : !(age >= 18 && age <= 75) ? ["dt-age", "Enter your age, between 18 and 75."]
+      : !(salary >= 5000) ? ["dt-salary", "Enter your monthly take-home salary, e.g. 85,000."]
+      : !company ? ["dt-company", "Enter the company you work for."] : null;
+    if (bad) { $("dt-err").textContent = bad[1]; $(bad[0]).focus(); return; }
+    $("dt-err").textContent = "";
+    var btn = $("dt-btn"); busy(btn, true);
+    api("PUT", "/api/me", { name: name.slice(0, 60), phone: ph, age: age, salary: salary, employer: company.slice(0, 60) })
+      .then(loadHome).then(landing)
+      .catch(function (err) { $("dt-err").textContent = err.message; }).finally(function () { busy(btn, false); });
+  });
   function backHome() { history_ = ["screen-home"]; openHome(); }
   function refreshHome() { return loadHome().catch(function (e) { toast(e.message); }); }
 
@@ -459,10 +496,10 @@
     callback: [["Our executive calls you", "At the time you picked"]]
   };
   var NEXT = {
-    balance_transfer: ["A Samvaad executive will be in touch within one working day", "They collect your documents and apply with the bank for you", "No charge to you for our help"],
-    fresh_loan: ["A Samvaad executive will be in touch within one working day", "They compare banks and apply for you", "No charge to you for our help"],
-    payoff_help: ["A Samvaad executive will be in touch within one working day", "They help you follow the plan, month by month", "No charge to you for our help"],
-    callback: ["A Samvaad executive will call you at the time you picked", "No charge to you for our help"]
+    balance_transfer: ["A Credwise executive will be in touch within one working day", "They collect your documents and apply with the bank for you", "No charge to you for our help"],
+    fresh_loan: ["A Credwise executive will be in touch within one working day", "They compare banks and apply for you", "No charge to you for our help"],
+    payoff_help: ["A Credwise executive will be in touch within one working day", "They help you follow the plan, month by month", "No charge to you for our help"],
+    callback: ["A Credwise executive will call you at the time you picked", "No charge to you for our help"]
   };
   // how far along the tracker is, from the status you set in admin
   var PROGRESS = { "new": 1, contacted: 2, in_progress: 3, done: 99, closed: 99 };
@@ -794,7 +831,7 @@
     var b = rep.score ? band(rep.score) : ["", "", ""];
     $("f-ring").className = "score-ring " + b[1]; $("f-score").textContent = rep.score || "—";
     var n = rep.accounts.length;
-    $("f-title").textContent = "We found " + n + " open account" + (n === 1 ? "" : "s");
+    $("f-title").textContent = "We found " + n + " active loan" + (n === 1 ? "" : "s");
     var ul = $("f-list"); ul.textContent = "";
     rep.accounts.forEach(function (l) {
       l.keep = true;
@@ -803,18 +840,20 @@
       var ic = el("span", "pick-icon"); ic.innerHTML = LOAN_ICON; top.appendChild(ic);
       var mid = el("div"); mid.appendChild(el("div", "found-name", l.type_label || typeName(l.type)));
       mid.appendChild(el("div", "found-meta", (l.lender || "Lender") + (l.opened ? " · since " + l.opened : ""))); top.appendChild(mid);
-      var amt = el("div", "found-amt"); amt.appendChild(el("b", null, inr(l.outstanding))); amt.appendChild(el("span", null, "left to pay")); top.appendChild(amt);
       li.appendChild(top);
-      var f = el("div", "found-fields");
+      var f = el("div", "found-fields three");
       var card = l.type === "credit_card";
+      f.appendChild(miniField("Left to pay", l.outstanding, "e.g. 250000", function (v) { l.outstanding = v; }, true));
       f.appendChild(miniField("Rate %", l.rate, card ? "e.g. 36" : "e.g. 14", function (v) { l.rate = v; }, true));
       f.appendChild(miniField(card ? "Pay / month" : "EMI", l.emi, card ? "Optional" : "e.g. 10500", function (v) { l.emi = v; }, !card));
       li.appendChild(f);
-      var t = el("label", "found-toggle");
-      var cbx = el("input"); cbx.type = "checkbox"; cbx.checked = true;
-      cbx.addEventListener("change", function () { l.keep = cbx.checked; li.classList.toggle("off", !cbx.checked); countFound(); });
-      t.appendChild(cbx); t.appendChild(document.createTextNode("Add this to my loans"));
-      li.appendChild(t);
+      var rm = el("button", "found-remove"); rm.type = "button"; rm.textContent = "Loan closed? Remove it";
+      rm.addEventListener("click", function () {
+        l.keep = !l.keep; li.classList.toggle("off", !l.keep);
+        rm.textContent = l.keep ? "Loan closed? Remove it" : "Removed · Undo";
+        countFound();
+      });
+      li.appendChild(rm);
       l._li = li;
       ul.appendChild(li);
     });
@@ -823,16 +862,22 @@
     history_ = ["screen-home", "screen-score"];
     show("screen-found"); window.scrollTo(0, 0);
   }
+  var fmtRate = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 });
   function miniField(label, value, ph, onSet, needed) {
+    var f = /rate/i.test(label) ? fmtRate : fmt;
     var w = el("label", "mini-field" + (needed && !value ? " need" : ""));
     var lab = el("span", null, label);
-    if (value) lab.appendChild(el("span", "from-report", " ✓ from CIBIL"));
+    if (value) { var ck = el("span", "from-report", " ✓"); ck.title = "From your CIBIL report"; lab.appendChild(ck); }
     w.appendChild(lab);
     var inp = el("input"); inp.type = "text"; inp.inputMode = "decimal"; inp.placeholder = ph;
-    if (value) inp.value = fmt.format(value);
+    if (value) inp.value = f.format(value);
     inp.addEventListener("input", function () {
       var v = parseFloat(inp.value.replace(/[^0-9.]/g, "")) || null;
       onSet(v); w.classList.toggle("need", !!needed && !v);
+    });
+    inp.addEventListener("blur", function () {
+      var v = parseFloat(inp.value.replace(/[^0-9.]/g, ""));
+      if (v) inp.value = f.format(v);
     });
     w.appendChild(inp);
     return w;
@@ -844,15 +889,16 @@
   $("f-save").addEventListener("click", function () {
     var keep = found.accounts.filter(function (l) { return l.keep; });
     if (!keep.length) { backHome(); return; }
-    var missing = keep.filter(function (l) { return !l.rate || (l.type !== "credit_card" && !l.emi); });
+    var missing = keep.filter(function (l) { return !l.outstanding || !l.rate || (l.type !== "credit_card" && !l.emi); });
     if (missing.length) {
-      toast("Add the " + (missing[0].rate ? "EMI" : "interest rate") + " for your " + (missing[0].type_label || "loan").toLowerCase() + " with " + (missing[0].lender || "the lender") + ".");
+      var m = missing[0];
+      toast("Add the " + (!m.outstanding ? "amount left to pay" : !m.rate ? "interest rate" : "EMI") + " for your " + (m.type_label || "loan").toLowerCase() + " with " + (m.lender || "the lender") + ".");
       missing[0]._li.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     var btn = this; busy(btn, true);
     api("POST", "/api/loans/bulk", { loans: keep.map(function (l) { return { type: l.type, lender: l.lender, outstanding: l.outstanding, rate: l.rate, emi: l.emi || "" }; }) })
-      .then(loadHome).then(function () { backHome(); toast(keep.length + " loan" + (keep.length === 1 ? "" : "s") + " added from your CIBIL report."); })
+      .then(loadHome).then(function () { openBanks(true); toast(keep.length + " loan" + (keep.length === 1 ? "" : "s") + " saved from your CIBIL report."); })
       .catch(function (err) { toast(err.message); if (err.data && err.data.index != null && keep[err.data.index]) keep[err.data.index]._li.scrollIntoView({ block: "center" }); })
       .finally(function () { busy(btn, false); });
   });
@@ -1084,7 +1130,7 @@
     parts.forEach(function (t, i) { if (i) idBox.appendChild(document.createTextNode(" · ")); idBox.appendChild(el("span", "nowrap", t)); });
     $("me-f-name").value = name; $("me-f-phone").value = phone;
     $("me-f-salary").value = p.salary ? fmt.format(p.salary) : "";
-    $("me-f-employer").value = p.employer || ""; $("me-f-city").value = p.city || "";
+    $("me-f-employer").value = p.employer || ""; $("me-f-city").value = p.city || ""; $("me-f-age").value = p.age || "";
     $("me-err").textContent = ""; $("me-err").className = "err";
     $("acc-admin").hidden = !D.is_admin;
     $("acc-cibil-sub").textContent = p.cibil_score ? p.cibil_score + " · " + band(p.cibil_score)[0] : "Not added yet";
@@ -1115,7 +1161,8 @@
     var btn = $("me-save"); busy(btn, true);
     api("PUT", "/api/me", {
       name: $("me-f-name").value.trim().slice(0, 60), phone: ph ? "+91" + ph : "",
-      salary: $("me-f-salary").value.replace(/\D/g, ""), employer: $("me-f-employer").value.trim().slice(0, 60), city: $("me-f-city").value.trim().slice(0, 40)
+      salary: $("me-f-salary").value.replace(/\D/g, ""), employer: $("me-f-employer").value.trim().slice(0, 60), city: $("me-f-city").value.trim().slice(0, 40),
+      age: $("me-f-age").value.replace(/\D/g, "")
     }).then(loadHome).then(function () {
       renderAccount();
       $("me-err").className = "saved-ok"; $("me-err").textContent = "Saved";
@@ -1146,7 +1193,56 @@
   document.querySelectorAll("[data-service]").forEach(function (b) {
     b.addEventListener("click", function () { SERVICES[b.dataset.service](); });
   });
-  $("h-saving-go").addEventListener("click", openBtLoans);
+  $("h-saving-go").addEventListener("click", function () { openBanks(false); });
+
+  // ---- Best banks for this customer (lower rate and EMI, matched to their profile)
+  function openBanks(afterSave) {
+    var list = (D && D.best_banks) || [], ov = (D && D.overview) || { count: 0 }, p = (D && D.profile) || {};
+    $("bk-title").textContent = list.length ? list.length + " bank" + (list.length === 1 ? " can" : "s can") + " lower your EMI" : "No cheaper bank right now";
+    var basis = [ov.count + " loan" + (ov.count === 1 ? "" : "s")];
+    if (p.salary) basis.push("salary " + inr(p.salary));
+    basis.push(p.cibil_score ? "CIBIL " + p.cibil_score : "no CIBIL score yet");
+    if (p.age) basis.push("age " + p.age);
+    $("bk-sub").textContent = "Matched to your " + basis.join(", ") + ".";
+    $("bk-emi").textContent = inr(ov.total_emi || 0) + "/mo";
+    $("bk-count").textContent = ov.count || 0;
+    var ol = $("bk-list"); ol.textContent = "";
+    $("bk-empty").hidden = !!list.length;
+    list.forEach(function (b, i) {
+      var li = el("li", "bk" + (i === 0 ? " bk-top" : ""));
+      var head = el("div", "bk-head");
+      head.appendChild(el("span", "lender-mark", initials(b.bank)));
+      var nm = el("div"); nm.appendChild(el("b", null, b.bank));
+      nm.appendChild(el("span", null, "From " + pct(b.best_rate) + " a year"));
+      head.appendChild(nm);
+      if (i === 0) head.appendChild(el("span", "bk-badge", "Best for you"));
+      li.appendChild(head);
+      var nums = el("div", "bk-nums");
+      var e1 = el("div"); e1.appendChild(el("span", null, "EMI")); e1.appendChild(el("b", null, inr(b.emi_now) + " → " + inr(b.emi_new)));
+      e1.appendChild(el("i", null, b.emi_saving > 0 ? inr(b.emi_saving) + " less a month" : "same EMI, less interest"));
+      var e2 = el("div"); e2.appendChild(el("span", null, "You save")); e2.appendChild(el("b", "bk-save", inr(b.net_saving)));
+      e2.appendChild(el("i", null, "after " + inr(b.fees) + " fees"));
+      nums.appendChild(e1); nums.appendChild(e2); li.appendChild(nums);
+      var ul = el("ul", "bk-loans");
+      b.loans.forEach(function (x) {
+        ul.appendChild(el("li", null, typeName(x.type) + (x.lender ? " · " + x.lender : "") + ": " + pct(x.old_rate) + " → " + pct(x.new_rate) + ", EMI " + inr(x.old_emi) + " → " + inr(x.new_emi)));
+      });
+      li.appendChild(ul);
+      var go = el("button", "btn-main btn-small" + (i === 0 ? "" : " btn-ghost")); go.type = "button"; go.textContent = "Get this offer";
+      go.addEventListener("click", function () {
+        var rows = [["Bank", b.bank], ["Loans moved", b.loans.length + " of " + ov.count],
+                    ["Interest rate", "from " + pct(b.best_rate)], ["EMI", inr(b.emi_now) + " → " + inr(b.emi_new) + " a month"],
+                    ["Fees", inr(b.fees) + " (counted)"], ["You save", inr(b.net_saving), true]];
+        openConfirm({ kind: "balance_transfer", doneText: "Lower my rate · move to " + b.bank, rows: rows,
+                      payload: { loan_id: b.loans[0].loan_id, bank_id: b.bank_id } });
+      });
+      li.appendChild(go);
+      ol.appendChild(li);
+    });
+    history_ = afterSave ? ["screen-home", "screen-banks"] : ["screen-home", "screen-banks"];
+    show("screen-banks"); window.scrollTo(0, 0);
+  }
+  $("bk-home").addEventListener("click", backHome);
 
   // ---- Call us
   function fmtPhone(d) { return "+" + d.slice(0, 2) + " " + d.slice(2, 7) + " " + d.slice(7); }

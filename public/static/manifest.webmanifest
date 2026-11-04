@@ -1,6 +1,6 @@
 {
-  "name": "Samvaad: your loans, sorted",
-  "short_name": "Samvaad",
+  "name": "Credwise: your loans, sorted",
+  "short_name": "Credwise",
   "description": "AI loan advisor for salaried employees: close loans faster, cut interest, move to cheaper lenders.",
   "start_url": "/app",
   "scope": "/",

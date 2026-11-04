@@ -208,11 +208,24 @@ def update_me():
             clean["salary"] = round(salary, 0)
         else:
             clean["salary"] = None
+    if "age" in data:
+        raw = str(data["age"] or "").strip()
+        if raw:
+            if not raw.isdigit() or not 18 <= int(raw) <= 75:
+                return jsonify({"error": "Enter your age in years, between 18 and 75."}), 400
+            clean["age"] = int(raw)
+        else:
+            clean["age"] = None
+    if clean.get("phone"):
+        digits = "".join(ch for ch in clean["phone"] if ch.isdigit())[-10:]
+        if len(digits) != 10 or digits[0] not in "6789":
+            return jsonify({"error": "Enter a valid 10-digit mobile number."}), 400
+        clean["phone"] = digits
     before = store.get_profile(user_id()) or {}
     profile = store.upsert_profile(user_id(), clean)
     changed = [k for k in clean if (before.get(k) or None) != (clean[k] or None)]
     if changed:
-        labels = {"name": "name", "phone": "phone", "employer": "company", "city": "city", "salary": "salary"}
+        labels = {"name": "name", "phone": "phone", "employer": "company", "city": "city", "salary": "salary", "age": "age"}
         log(store, "details", "Changed " + ", ".join(labels.get(k, k) for k in changed),
             {k: clean[k] for k in changed})
     return jsonify({"profile": profile})
@@ -393,6 +406,17 @@ def new_request():
         options = L.transfer_options(loan, bank_offers)
         chosen = next((o for o in options if o["bank_id"] == data.get("bank_id")), options[0] if options else None)
         details.update(loan=loan, offer=chosen)
+        if data.get("bank_id"):  # from "Best banks for you": every loan this bank can take
+            plan = next((b for b in L.best_banks(loans, bank_offers, profile) if b["bank_id"] == data.get("bank_id")), None)
+            if plan:
+                details.update(bank_plan=plan)
+                # the figures the customer saw: their likely rate, not the bank's best case
+                mine = next((x for x in plan["loans"] if x["loan_id"] == loan["id"]), plan["loans"][0])
+                case = {"rate": mine["new_rate"], "new_emi": mine["new_emi"],
+                        "emi_change": mine["new_emi"] - mine["old_emi"], "net_saving": mine["net_saving"]}
+                details.update(offer={"bank": plan["bank"], "bank_id": mine["offer_id"], "tenure_months": mine["tenure_months"],
+                                      "processing_fee": mine["fees"], "foreclosure_charge": 0,
+                                      "best": case, "cautious": case})
     elif kind == "fresh_loan":
         loan_type = data.get("loan_type") if data.get("loan_type") in L.LOAN_TYPES else "personal"
         details.update(loan_type=loan_type,
@@ -506,6 +530,7 @@ def home_data():
         "profile": profile,
         "overview": L.overview(loans, profile.get("salary")),
         "transfers": L.savings_finder(loans, bank_offers),
+        "best_banks": L.best_banks(loans, bank_offers, profile),
         "plans": plans,
         "eligibility": elig,
         "requests": store.list_requests(uid),

@@ -273,3 +273,10 @@ def cron_cleanup():
     if err:
         return err
     return jsonify(cleanup.run(store))
+
+
+@bp.route("/api/admin/ai-check")
+@auth.admin_required
+def ai_check():
+    """Is Ritu's AI working? Sends one tiny test question to the provider."""
+    return jsonify(advisor.check())

@@ -1,4 +1,4 @@
-/* Samvaad admin mode inside the app. Only opens for admin emails; every
+/* Credwise admin mode inside the app. Only opens for admin emails; every
    call goes to /api/admin/*, which the server also locks to admins. */
 (function () {
   "use strict";
@@ -34,7 +34,7 @@
   function digits(ph) { return (ph || "").replace(/\D/g, ""); }
   function waLink(ph, name) {
     var d = digits(ph); if (d.length === 10) d = "91" + d;
-    var msg = "Hi" + (name ? " " + name.split(" ")[0] : "") + ", this is Samvaad. Following up on your request in the app.";
+    var msg = "Hi" + (name ? " " + name.split(" ")[0] : "") + ", this is Credwise. Following up on your request in the app.";
     return "https://wa.me/" + d + "?text=" + encodeURIComponent(msg);
   }
   function scoreClass(v) { return !v ? "" : v >= 700 ? "good" : v >= 650 ? "ok" : "low"; }
@@ -147,6 +147,7 @@
       row("Call", d.call_time || "Any time"); row("About", d.topic);
     }
     row("Salary", d.salary ? inr(d.salary) + "/month" : "not given");
+    if (d.bank_plan) row("Best-bank plan", d.bank_plan.bank + ": " + d.bank_plan.loans.length + " loan" + (d.bank_plan.loans.length === 1 ? "" : "s") + ", EMI " + inr(d.bank_plan.emi_now) + " → " + inr(d.bank_plan.emi_new) + ", saves " + inr(d.bank_plan.net_saving));
     if (d.overview) row("All EMIs", inr(d.overview.total_emi) + (d.overview.emi_to_salary_pct != null ? " (" + d.overview.emi_to_salary_pct + "% of salary)" : ""));
     if (d.note) row("Customer's note", "“" + d.note + "”");
 
@@ -312,7 +313,7 @@
       sb.appendChild(st); cs.appendChild(sb); body.appendChild(cs);
 
       var ds = sec("Details");
-      kv(ds, "Company", p.employer); kv(ds, "City", p.city); kv(ds, "Salary / month", p.salary ? inr(p.salary) : null);
+      kv(ds, "Company", p.employer); kv(ds, "Age", p.age ? p.age + " years" : null); kv(ds, "City", p.city); kv(ds, "Salary / month", p.salary ? inr(p.salary) : null);
       kv(ds, "EMIs take", ov.emi_to_salary_pct != null ? ov.emi_to_salary_pct + "% of salary" : null);
       kv(ds, "Joined", p.created_at ? SV.niceDate(p.created_at) : null); kv(ds, "Last active", p.last_seen ? ago(p.last_seen) : null);
       body.appendChild(ds);

@@ -1,4 +1,4 @@
-"""Ritu, the loan advisor inside the Samvaad app.
+"""Ritu, the loan advisor inside the Credwise app.
 
 Which AI answers is one setting (AI_PROVIDER):
   gemini  -> Google Gemini (GEMINI_API_KEY, model GEMINI_MODEL)
@@ -15,6 +15,7 @@ Two rules keep this trustworthy:
 """
 import os
 import json
+import re
 
 import requests
 
@@ -25,9 +26,9 @@ def pct(x):
     """14.0 -> '14%', 9.5 -> '9.5%'"""
     return f"{float(x):g}%"
 
-TIMEOUT = 40
+TIMEOUT = 20  # a slow AI falls back to the app's own answer instead of leaving the customer waiting
 
-SYSTEM_PROMPT = """You are Ritu, the loan advisor inside Samvaad, an app that helps salaried employees in India
+SYSTEM_PROMPT = """You are Ritu, the loan advisor inside Credwise, an app that helps salaried employees in India
 take control of their loans: close them faster, cut their interest, move loans to cheaper lenders
 (balance transfer), and take fresh loans sensibly.
 
@@ -41,7 +42,7 @@ HOW YOU WORK
 - Be practical and specific to THEIR loans. Lead with the single most useful thing.
 - Keep replies short: 2 to 5 sentences, or a few short lines. Plain text, no markdown headings or tables.
 - When a balance transfer, fresh loan or payoff help would genuinely help, tell them they can tap
-  "Get this done" and the Samvaad team will handle the bank paperwork for them, free of charge.
+  "Get this done" and the Credwise team will handle the bank paperwork for them, free of charge.
   Never pressure them. If switching doesn't save money, say so plainly.
 - Never ask for or repeat account numbers, card numbers, PAN, Aadhaar, OTPs or passwords. If they share
   one, tell them not to, and continue without it.
@@ -89,6 +90,16 @@ class AdvisorError(RuntimeError):
     pass
 
 
+def _api_message(r):
+    """The provider's own error text (never contains the key), for the admin AI check."""
+    try:
+        d = r.json()
+        err = d.get("error") or {}
+        return str(err.get("message") if isinstance(err, dict) else err or d)[:240]
+    except Exception:
+        return r.text[:240]
+
+
 def _gemini(system, history, message):
     model = os.getenv("GEMINI_MODEL") or "gemini-3.8-flash"
     while history and history[0]["role"] == "assistant":  # Gemini wants the user to speak first
@@ -109,7 +120,7 @@ def _gemini(system, history, message):
     if r.status_code == 429:
         raise AdvisorError("Ritu is getting a lot of questions right now (the free AI limit was reached). Try again in a minute.")
     if r.status_code >= 400:
-        raise AdvisorError(f"Gemini returned an error ({r.status_code}). Check GEMINI_API_KEY and GEMINI_MODEL.")
+        raise AdvisorError(f"Gemini returned an error ({r.status_code}): {_api_message(r)}")
     data = r.json()
     try:
         parts = data["candidates"][0]["content"]["parts"]
@@ -133,7 +144,7 @@ def _claude(system, history, message):
     if r.status_code == 429:
         raise AdvisorError("Ritu is busy right now. Try again in a minute.")
     if r.status_code >= 400:
-        raise AdvisorError(f"Claude returned an error ({r.status_code}). Check ANTHROPIC_API_KEY and CLAUDE_MODEL.")
+        raise AdvisorError(f"Claude returned an error ({r.status_code}): {_api_message(r)}")
     data = r.json()
     return "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text").strip()
 
@@ -180,6 +191,7 @@ def build_context(profile, loans, offers):
             "fees_counted": f"processing {L.inr(best['processing_fee'])}, foreclosure {L.inr(best['foreclosure_charge'])}",
         })
     elig = L.eligibility(salary, loans, offers, "personal") if salary else None
+    banks = L.best_banks(loans, offers, profile or {})
 
     return {
         "monthly_take_home_salary": L.inr(salary) if salary else "not given",
@@ -204,6 +216,13 @@ def build_context(profile, loans, offers):
         "payoff_plans_highest_rate_first": plans,
         "usual_total_interest": L.inr(plan_now["usual_interest"]) if plan_now else None,
         "balance_transfer": savings,
+        "best_banks_for_you": [{
+            "bank": b["bank"],
+            "likely_rate_from": pct(b["best_rate"]),
+            "emi_now_to_new": f"{L.inr(b['emi_now'])} to {L.inr(b['emi_new'])} a month",
+            "net_saving_after_fees": L.inr(b["net_saving"]),
+            "loans_it_takes": [f"{L.LOAN_TYPES[x['type']]} ({x['lender'] or 'lender not given'})" for x in b["loans"]],
+        } for b in banks] or "no partner bank saves money after fees right now",
         "fresh_personal_loan_room": ({
             "emi_room_per_month": L.inr(elig["emi_room"]),
             "rule": f"banks usually keep all EMIs within about {elig['foir_pct']}% of take-home pay",
@@ -216,25 +235,60 @@ def build_context(profile, loans, offers):
 
 # ------------------------------------------------------------ fallback
 
-def rules_reply(context):
-    """No AI key: a useful, honest answer built only from the numbers."""
+def rules_reply(context, message=""):
+    """When the AI isn't available: answer the question from the app's own numbers."""
     s = context["summary"]
+    q = (message or "").lower()
+    has = lambda *words: any(w in q for w in words)
     if s["number_of_loans"] == 0:
-        return ("Add your loans in the Loans tab first: the amount left, the interest rate and the EMI. "
-                "Then I can show you how to close them faster and where you could save.")
-    n = s['number_of_loans']
+        return ("Add your loans first, or upload your CIBIL report and I'll add them for you. "
+                "Then I can show you which bank gives you a lower rate and EMI, and how to close your loans sooner.")
+    n = s["number_of_loans"]
+    banks = context.get("best_banks_for_you")
+    plans = context["payoff_plans_highest_rate_first"]
+
+    if re.search(r"\b(hi|hello|hey|hii+|namaste|namaskar)\b", q) and len(q) < 25:
+        return (f"Hi! You have {n} loan{'s' if n != 1 else ''} with {s['total_outstanding']} left. "
+                "Ask me which bank can lower your EMI, how to close your loans faster, or how much more you can borrow.")
+    if has("bank", "rate", "interest", "transfer", "cheap", "lower", "emi kam", "byaj", "best"):
+        if isinstance(banks, list) and banks:
+            b = banks[0]
+            more = f" {len(banks) - 1} other bank{'s' if len(banks) > 2 else ''} can also help." if len(banks) > 1 else ""
+            return (f"{b['bank']} is your best option: from {b['likely_rate_from']} a year, your EMI goes from "
+                    f"{b['emi_now_to_new']}, and you save {b['net_saving_after_fees']} after all fees.{more} "
+                    "Open Best banks for you on the home screen and tap Get this offer.")
+        return ("Right now none of our partner banks would save you money after fees. "
+                "Tap Call me and our executive will check other options for you.")
+    if has("close", "faster", "prepay", "extra", "debt free", "debt-free", "jaldi", "finish", "pay off"):
+        p = plans.get("pay_5000_extra_per_month")
+        if p:
+            return (f"Paying ₹5,000 extra a month, starting with {p['close_in_this_order'][0]}, saves "
+                    f"{p['interest_saved']} and makes you debt-free in {p['debt_free_in']} instead of "
+                    f"{s['debt_free_if_paying_as_usual']}. Open Close faster to try other amounts.")
+    if has("new loan", "borrow", "eligible", "eligibility", "how much", "kitna", "more loan"):
+        room = context.get("fresh_personal_loan_room")
+        if isinstance(room, dict):
+            return (f"You have about {room['emi_room_per_month']} a month of EMI room ({room['rule']}). "
+                    f"Best offer: {room['best_offer']}. Open New loan to see the details.")
+        return "Add your monthly take-home salary in Account, and I'll show how much banks would usually lend you."
+    if has("cibil", "score", "credit score"):
+        score = context.get("cibil_score")
+        if score and score != "not given":
+            band = "excellent" if int(score) >= 750 else "fair" if int(score) >= 700 else "low"
+            return (f"Your CIBIL score is {score}, which banks see as {band}. "
+                    + ("You should get the lowest rates banks offer." if band == "excellent"
+                       else "Paying every EMI and card bill on time, and keeping card use under 30% of the limit, raises it."))
+        return "Upload your free CIBIL report from the CIBIL score card on the home screen, and I'll read your score and loans from it."
+    if has("emi", "salary", "afford", "too high"):
+        return (f"Your EMIs are {s['total_monthly_emi']} a month, {s['emi_as_share_of_salary']} of your take-home pay. "
+                "Banks get careful when EMIs go above about half your salary.")
+
     lines = [f"You have {n} loan{'s' if n != 1 else ''} with {s['total_outstanding']} left and "
              f"{s['total_interest_still_to_pay']} of interest still to pay. Paying as usual, you're debt-free in "
              f"{s['debt_free_if_paying_as_usual']}."]
-    p = context["payoff_plans_highest_rate_first"].get("pay_5000_extra_per_month")
-    if p:
-        lines.append(f"Paying ₹5,000 extra a month, starting with {p['close_in_this_order'][0]}, saves "
-                     f"{p['interest_saved']} and you're debt-free in {p['debt_free_in']}.")
-    for item in context["balance_transfer"]:
-        if "best_offer" in item:
-            lines.append(f"Moving your {item['loan']} to {item['best_offer']} could save {item['net_saving_range']} "
-                         f"after fees. Tap \"Get this done\" in Savings and we'll handle it.")
-            break
+    if isinstance(banks, list) and banks:
+        lines.append(f"{banks[0]['bank']} could save you {banks[0]['net_saving_after_fees']} after fees.")
+    lines.append("For anything else, tap Call me and our executive will help.")
     return " ".join(lines)
 
 
@@ -250,13 +304,27 @@ def ask(message, history, profile, loans, offers, voice=False):
     message = (message or "").strip()[:2000]
     p = provider()
     if p == "none":
-        return rules_reply(context), "rules"
+        return rules_reply(context, message), "rules"
     fn = {"gemini": _gemini, "claude": _claude, "sarvam": _sarvam}[p]
     try:
         reply = fn(system, history, message)
-    except Exception:
-        # The AI is down or rate-limited: still answer from the app's numbers.
-        return rules_reply(context), "rules"
+    except Exception as exc:
+        # The AI is down, rate-limited or misconfigured: still answer from the app's numbers.
+        print(f"[ritu] {p} failed: {exc}")
+        return rules_reply(context, message), "rules"
     if not reply:
-        return rules_reply(context), "rules"
+        return rules_reply(context, message), "rules"
     return reply, p
+
+
+def check():
+    """For the admin AI check: try one tiny question and report what happened."""
+    p = provider()
+    if p == "none":
+        return {"provider": provider_label(), "ok": False, "error": "No AI key is set, so Ritu answers from the app's numbers only."}
+    fn = {"gemini": _gemini, "claude": _claude, "sarvam": _sarvam}[p]
+    try:
+        reply = fn("Reply with the single word: ready", [], "Are you ready?")
+        return {"provider": provider_label(), "ok": bool(reply), "reply": (reply or "")[:80]}
+    except Exception as exc:
+        return {"provider": provider_label(), "ok": False, "error": str(exc)[:300]}

@@ -337,6 +337,107 @@ def transfer_options(loan, offers, months=None):
     return results
 
 
+RETIRE_AGE = 60  # banks usually want a loan closed by about this age
+
+
+def likely_rate(offer, cibil_score=None):
+    """The rate a bank would probably offer this customer.
+
+    Banks quote a range and give their best rate to strong credit scores:
+    750+ gets the lowest rate, 700-749 the middle, below 700 the top of the
+    range. With no score yet we assume the middle.
+    """
+    lo = float(offer["rate_min"])
+    hi = float(offer.get("rate_max") or lo)
+    try:
+        score = int(cibil_score) if cibil_score else None
+    except (TypeError, ValueError):
+        score = None
+    if score and score >= 750:
+        rate = lo
+    elif score and score < 700:
+        rate = hi
+    else:
+        rate = (lo + hi) / 2
+    return round(rate, 2)
+
+
+def best_banks(loans, offers, profile=None, limit=5):
+    """Banks ranked by how much they would save this customer across all their loans.
+
+    For each bank, every loan it can take over is moved at the customer's likely
+    rate, keeping the remaining tenure (capped by the bank's maximum and by the
+    customer's age). A loan is only counted if it saves money after the bank's
+    processing fee and the current lender's foreclosure charge.
+    """
+    profile = profile or {}
+    age = profile.get("age")
+    try:
+        age_cap = max(12, (RETIRE_AGE - int(age)) * 12) if age else None
+    except (TypeError, ValueError):
+        age_cap = None
+    score = profile.get("cibil_score")
+    salary = float(profile.get("salary") or 0)
+    total_emi = sum(l["emi"] for l in loans)
+
+    banks = {}
+    for loan in loans:
+        months = months_to_close(loan["outstanding"], loan["rate"], loan["emi"])
+        if not months:
+            continue
+        current_interest = interest_left(loan["outstanding"], loan["rate"], loan["emi"]) or 0
+        foreclosure = loan["outstanding"] * loan.get("foreclosure_pct", 0) / 100
+        for offer in offers:
+            if offer.get("product") != loan["type"] or not offer.get("active", True):
+                continue
+            rate = likely_rate(offer, score)
+            if rate >= loan["rate"]:
+                continue
+            tenure = min(months, int(offer.get("max_tenure_months") or months))
+            if age_cap:
+                tenure = min(tenure, age_cap)
+            new_emi = emi(loan["outstanding"], rate, tenure)
+            fee = loan["outstanding"] * float(offer.get("processing_fee_pct") or 0) / 100
+            net = current_interest - (new_emi * tenure - loan["outstanding"]) - fee - foreclosure
+            if net <= 0:
+                continue
+            b = banks.setdefault(offer["name"], {"bank": offer["name"], "loans": []})
+            b["loans"].append({
+                "loan_id": loan.get("id"),
+                "offer_id": offer.get("id"),
+                "type": loan["type"],
+                "lender": loan.get("lender", ""),
+                "outstanding": round(loan["outstanding"], 0),
+                "old_rate": loan["rate"],
+                "new_rate": rate,
+                "rate_range": [float(offer["rate_min"]), float(offer.get("rate_max") or offer["rate_min"])],
+                "old_emi": round(loan["emi"], 0),
+                "new_emi": round(new_emi, 0),
+                "tenure_months": tenure,
+                "fees": round(fee + foreclosure, 0),
+                "net_saving": round(net, 0),
+            })
+
+    out = []
+    for b in banks.values():
+        b["loans"].sort(key=lambda x: -x["net_saving"])
+        emi_now = sum(x["old_emi"] for x in b["loans"])
+        emi_new = sum(x["new_emi"] for x in b["loans"])
+        b.update(
+            bank_id=b["loans"][0]["offer_id"],
+            best_rate=min(x["new_rate"] for x in b["loans"]),
+            emi_now=round(emi_now, 0),
+            emi_new=round(emi_new, 0),
+            emi_saving=round(emi_now - emi_new, 0),
+            fees=round(sum(x["fees"] for x in b["loans"]), 0),
+            net_saving=round(sum(x["net_saving"] for x in b["loans"]), 0),
+            emi_to_salary_after=round((total_emi - emi_now + emi_new) / salary * 100) if salary else None,
+        )
+        out.append(b)
+    out.sort(key=lambda b: (-b["net_saving"], -b["emi_saving"]))
+    return out[:limit]
+
+
 def savings_finder(loans, offers):
     out = []
     for i, loan in enumerate(loans):

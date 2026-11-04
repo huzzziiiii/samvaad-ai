@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>{% block title %}Samvaad{% endblock %}</title>
-  <meta name="description" content="Samvaad is an AI loan advisor for salaried employees in India. Add your loans and get a plan to close them faster, cut your interest and move to cheaper lenders.">
+  <title>{% block title %}Credwise{% endblock %}</title>
+  <meta name="description" content="Credwise is an AI loan advisor for salaried employees in India. Add your loans and get a plan to close them faster, cut your interest and move to cheaper lenders.">
   <meta name="theme-color" content="#2e3d9e">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.png') }}" type="image/png">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Samvaad">
+  <meta name="apple-mobile-web-app-title" content="Credwise">
   <link rel="preload" href="{{ url_for('static', filename='fonts/mukta-latin-400-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{{ url_for('static', filename='fonts/tiro-devanagari-hindi-latin-400-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
@@ -20,8 +20,8 @@
 <body class="{% block body_class %}{% endblock %}">
   <header class="site-header">
     <div class="wrap">
-      <a class="wordmark" href="{{ url_for('customer.app_home') if current_user else url_for('landing') }}" aria-label="Samvaad home">
-        <span class="wordmark-latin">samvaad</span>
+      <a class="wordmark" href="{{ url_for('customer.app_home') if current_user else url_for('landing') }}" aria-label="Credwise home">
+        <span class="wordmark-latin">credwise</span>
         <span class="wordmark-deva" lang="hi">संवाद</span>
       </a>
       <nav class="nav" aria-label="Main">
@@ -44,7 +44,7 @@
   {% block footer %}
   <footer class="site-footer">
     <div class="wrap">
-      <span>Samvaad, built in Bengaluru by Mohammed Huzaifa.</span>
+      <span>Credwise, built in Bengaluru by Mohammed Huzaifa.</span>
       <span><a href="{{ url_for('customer.privacy') }}">Privacy</a> &nbsp; <a href="{{ url_for('demo') }}">Ritu, the AI caller</a></span>
     </div>
   </footer>

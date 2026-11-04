@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="{{ url_for('static', filename='m/icons/icon-192.png') }}" type="image/png">
-  <title>Samvaad</title>
+  <title>Credwise</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Samvaad">
+  <meta name="apple-mobile-web-app-title" content="Credwise">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='m/icons/apple-touch-icon.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='m/app.css') }}?v={{ v }}">
@@ -17,15 +17,15 @@
 
   <!-- 0. Starting up -->
   <main class="screen boot" id="screen-boot" data-screen>
-    <span class="boot-mark">samvaad</span>
+    <span class="boot-mark">credwise</span>
     <span class="spinner" aria-hidden="true"></span>
   </main>
 
   <!-- 1. Enter email or phone -->
   <main class="screen" id="screen-id" data-screen hidden>
     <header class="top">
-      <span class="brand">samvaad</span>
-      <button class="call-pill" type="button" data-call aria-label="Call Samvaad">
+      <span class="brand">credwise</span>
+      <button class="call-pill" type="button" data-call aria-label="Call Credwise">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
         <span>Call us</span>
       </button>
@@ -45,7 +45,7 @@
       <button class="btn-link" type="button" data-call>Prefer to talk? Call us</button>
 
       <p class="fine">
-        By continuing, you agree to Samvaad using your details to check your loans and
+        By continuing, you agree to Credwise using your details to check your loans and
         contact you about offers you ask for. <a href="/privacy">Privacy</a>
       </p>
     </form>
@@ -57,7 +57,7 @@
       <button class="back" type="button" data-back aria-label="Back">
         <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <button class="call-pill" type="button" data-call aria-label="Call Samvaad">
+      <button class="call-pill" type="button" data-call aria-label="Call Credwise">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
         <span>Call us</span>
       </button>
@@ -90,7 +90,7 @@
   <main class="screen" id="screen-newpass" data-screen hidden>
     <header class="top">
       <span></span>
-      <button class="call-pill" type="button" data-call aria-label="Call Samvaad">
+      <button class="call-pill" type="button" data-call aria-label="Call Credwise">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
         <span>Call us</span>
       </button>
@@ -116,13 +116,56 @@
     </form>
   </main>
 
+  <!-- 2c. Your details (required before entering the app) -->
+  <main class="screen" id="screen-details" data-screen hidden>
+    <header class="top">
+      <span class="brand">credwise</span>
+      <button class="call-pill" type="button" data-call aria-label="Call Credwise">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
+        <span>Call us</span>
+      </button>
+    </header>
+
+    <form class="flow" id="dt-form" novalidate>
+      <h1 class="ask">Tell us about yourself</h1>
+      <p class="who">Banks use these to work out your best rate and EMI. Only the Credwise team sees them.</p>
+
+      <label class="field-label" for="dt-name">Full name</label>
+      <div class="input-wrap"><input id="dt-name" type="text" autocomplete="name" maxlength="60" placeholder="As on your PAN card"></div>
+
+      <label class="field-label" for="dt-phone">Mobile number</label>
+      <div class="input-wrap phone-wrap">
+        <span class="cc">+91</span>
+        <input id="dt-phone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="10" placeholder="10-digit mobile number">
+      </div>
+
+      <div class="two-up dt-two">
+        <label class="mini-field">
+          <span>Age</span>
+          <span class="suffix-wrap"><input id="dt-age" type="text" inputmode="numeric" maxlength="2" placeholder="28"><i>years</i></span>
+        </label>
+        <label class="mini-field">
+          <span>Monthly take-home salary</span>
+          <span class="suffix-wrap prefix"><b>₹</b><input id="dt-salary" type="text" inputmode="numeric" placeholder="85,000"></span>
+        </label>
+      </div>
+
+      <label class="field-label" for="dt-company">Company name</label>
+      <div class="input-wrap"><input id="dt-company" type="text" autocomplete="organization" maxlength="60" placeholder="Where you work, e.g. Infosys"></div>
+
+      <p class="err" id="dt-err" role="alert"></p>
+      <button class="btn-main" type="submit" id="dt-btn">Continue</button>
+      <button class="btn-link btn-link-quiet" type="button" id="dt-out">Not you? Sign out</button>
+    </form>
+  </main>
+
   <!-- 3. Home (inside the app) -->
   <div class="shell" id="screen-home" data-screen hidden>
     <main class="page" id="tab-home">
       <header class="home-top">
-        <span class="brand">samvaad</span>
+        <span class="brand">credwise</span>
         <button class="call-pill to-admin" type="button" id="to-admin" hidden>Back to admin</button>
-        <button class="call-pill" type="button" data-call aria-label="Call Samvaad">
+        <button class="call-pill" type="button" data-call aria-label="Call Credwise">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
         <span>Call us</span>
       </button>
@@ -209,7 +252,7 @@
           <p class="saving-tag">You could save</p>
           <p class="saving-amt" id="h-saving">—</p>
           <p class="sub" id="h-saving-sub">—</p>
-          <button class="btn-main btn-small" type="button" id="h-saving-go">See how</button>
+          <button class="btn-main btn-small" type="button" id="h-saving-go">See best banks</button>
         </div>
       </section>
 
@@ -222,7 +265,7 @@
     <!-- Services tab -->
     <main class="page" id="tab-services" hidden>
       <header class="home-top"><h1 class="tab-title">Services</h1></header>
-      <p class="tab-lede">Everything Samvaad does for you, free. Pick one and our executive takes it from there.</p>
+      <p class="tab-lede">Everything Credwise does for you, free. Pick one and our executive takes it from there.</p>
       <ul class="svc-list">
         <li><button class="svc" type="button" data-service="balance_transfer"><span class="tile-icon"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M6 11h17l-4-4M26 21H9l4 4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Lower my rate</b><span>Move a loan to a cheaper bank. We count every fee first.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
         <li><button class="svc" type="button" data-service="fresh_loan"><span class="tile-icon"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect x="5" y="9" width="22" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 13v7M12.5 16.5h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><span class="svc-body"><b>New loan</b><span>See how much you can borrow and get the best offer.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
@@ -251,7 +294,7 @@
 
       <div class="me-card">
         <span class="me-avatar" id="me-avatar">S</span>
-        <span><b id="me-name">Samvaad user</b><span id="me-id"></span></span>
+        <span><b id="me-name">Credwise user</b><span id="me-id"></span></span>
       </div>
 
       <h2 class="list-head">Your details</h2>
@@ -260,8 +303,9 @@
         <label class="mini-field"><span>Mobile number</span><input id="me-f-phone" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile"></label>
         <label class="mini-field"><span>Monthly take-home salary</span><input id="me-f-salary" type="text" inputmode="numeric" placeholder="e.g. 85,000"></label>
         <label class="mini-field"><span>Company</span><input id="me-f-employer" type="text" autocomplete="organization" placeholder="Where you work"></label>
+        <label class="mini-field"><span>Age</span><input id="me-f-age" type="text" inputmode="numeric" maxlength="2" placeholder="e.g. 28"></label>
         <label class="mini-field"><span>City</span><input id="me-f-city" type="text" autocomplete="address-level2" placeholder="e.g. Bengaluru"></label>
-        <p class="hint-line">Your salary is used to work out how much you can borrow. Only the Samvaad team sees it.</p>
+        <p class="hint-line">Your salary is used to work out how much you can borrow. Only the Credwise team sees it.</p>
         <p class="err" id="me-err" role="alert"></p>
         <button class="btn-main btn-small" type="submit" id="me-save">Save details</button>
       </form>
@@ -276,12 +320,12 @@
       <ul class="svc-list menu">
         <li id="acc-admin" hidden><a class="svc" href="/admin"><span class="svc-body"><b>Admin panel</b><span>Requests, customers and live activity</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
         <li><button class="svc" type="button" id="acc-cibil"><span class="svc-body"><b>CIBIL score</b><span id="acc-cibil-sub">Not added yet</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
-        <li><button class="svc" type="button" data-call><span class="svc-body"><b>Help and support</b><span>Talk to a Samvaad executive</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" data-call><span class="svc-body"><b>Help and support</b><span>Talk to a Credwise executive</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
         <li><a class="svc" href="/privacy" id="acc-privacy"><span class="svc-body"><b>Privacy</b><span>How we keep your details safe</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
       </ul>
 
       <button class="btn-signout" type="button" id="sign-out">Sign out</button>
-      <p class="version">Samvaad · version 1.0</p>
+      <p class="version">Credwise · version 1.0</p>
     </main>
 
     <nav class="tabbar" aria-label="Main">
@@ -464,7 +508,7 @@
         <span>In myCIBIL, go to My Account, then Get your Free Report, and save the PDF.</span>
       </li>
       <li>
-        <b>Add it to Samvaad</b>
+        <b>Add it to Credwise</b>
         <span>Upload the PDF so we can find you the right bank, or just type your score.</span>
         <label class="btn-upload">
           <input type="file" id="sc-file" accept="application/pdf" hidden>
@@ -487,7 +531,7 @@
         <p class="err" id="sc-err" role="alert"></p>
       </li>
     </ol>
-    <p class="fine-inline">Your report stays private. Only the Samvaad team sees it, to match you with banks. We never share it without asking you.</p>
+    <p class="fine-inline">Your report stays private. Only the Credwise team sees it, to match you with banks. We never share it without asking you.</p>
   </main>
 
   <!-- Reading the CIBIL report -->
@@ -515,16 +559,45 @@
     <div class="found-head">
       <span class="score-ring good" id="f-ring"><span id="f-score">—</span></span>
       <div>
-        <h1 class="ask" id="f-title">We found 3 open loans</h1>
-        <p class="sub" id="f-sub">Check them, add anything missing, and you're done.</p>
+        <h1 class="ask" id="f-title">We found 3 active loans</h1>
+        <p class="sub" id="f-sub">Check the numbers. Edit anything that's changed, and remove any loan you've already closed.</p>
       </div>
     </div>
 
     <ul class="found-list" id="f-list"></ul>
-    <p class="fine-inline">Closed loans aren't shown. CIBIL reports don't always include interest rates or EMIs, so add them where asked. Your bank's app or loan statement has them.</p>
+    <p class="fine-inline">✓ means the number came from your CIBIL report. Only active loans are shown. CIBIL reports don't always include interest rates or EMIs, so add them where asked. Your bank's app or loan statement has them.</p>
 
     <div class="dock">
       <button class="btn-main" type="button" id="f-save">Add 3 loans</button>
+    </div>
+  </main>
+
+  <!-- Best banks for this customer -->
+  <main class="screen flow-screen" id="screen-banks" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">Best banks for you</span>
+    </header>
+
+    <h1 class="ask" id="bk-title">3 banks can lower your EMI</h1>
+    <p class="sub bk-sub" id="bk-sub">—</p>
+
+    <div class="card bk-now">
+      <div><p class="label">Your EMIs today</p><p class="mid" id="bk-emi">—</p></div>
+      <div class="right"><p class="label">Loans</p><p class="mid" id="bk-count">—</p></div>
+    </div>
+
+    <ol class="bk-list" id="bk-list"></ol>
+    <div class="h-empty bk-empty" id="bk-empty" hidden>
+      <p><b>Your rates are already good</b>None of our partner banks would save you money right now, after fees. We'll keep checking as rates change.</p>
+      <button class="btn-main btn-small" type="button" data-call>Talk to an executive</button>
+    </div>
+    <p class="fine-inline">Rates are estimates from each bank's rate card, matched to your CIBIL score. Savings count the bank's processing fee and your current lender's foreclosure charge. The bank decides the final rate.</p>
+
+    <div class="dock">
+      <button class="btn-main" type="button" id="bk-home">Go to home</button>
     </div>
   </main>
 
@@ -687,7 +760,7 @@
       </span>
       <span>
         <b>Our executive will be in touch</b>
-        <span>A Samvaad executive will call you <span id="exec-when">within one working day</span> on the number you gave. Keep your phone handy.</span>
+        <span>A Credwise executive will call you <span id="exec-when">within one working day</span> on the number you gave. Keep your phone handy.</span>
       </span>
     </div>
 
@@ -826,7 +899,7 @@
   <div class="sheet-back" id="call-sheet" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="call-title">
       <span class="sheet-grab" aria-hidden="true"></span>
-      <h2 id="call-title">Talk to a Samvaad executive</h2>
+      <h2 id="call-title">Talk to a Credwise executive</h2>
       <p class="sub">Free help with your loans, balance transfers and new loans.</p>
       <a class="sheet-opt" id="call-now" href="tel:+910000000000">
         <span class="exec-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>

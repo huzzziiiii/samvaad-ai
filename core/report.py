@@ -5,7 +5,7 @@ it and returns ONLY what the app needs: the score, the report date, and each
 open loan or card (type, lender, amount left, EMI, rate, month opened).
 Names, PAN, addresses, phone numbers and account numbers are never returned
 or stored by the app. The PDF itself is kept in private storage for the
-Samvaad team.
+Credwise team.
 
 Needs ANTHROPIC_API_KEY. Without it, customers can still type their score.
 """
