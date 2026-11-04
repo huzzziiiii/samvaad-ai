@@ -93,22 +93,54 @@ def privacy():
     return render_template("privacy.html", active="privacy")
 
 
+# The service worker is kept in code: on Vercel, files in public/ are served by
+# the CDN and the Python function can't read them. It must live at /sw.js (not
+# /static/...) so it can look after the whole app.
+SERVICE_WORKER = r"""// Credwise service worker: lets the app install on phones and open its shell
+// offline. Pages and API calls always go to the network first, so customers
+// never see stale loan numbers.
+var CACHE = "credwise-v3";
+var SHELL = ["/static/m/app.css", "/static/m/app.js", "/static/m/admin.js", "/static/m/icons/icon-192.png"];
+
+self.addEventListener("install", function (e) {
+  e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
+});
+
+self.addEventListener("activate", function (e) {
+  e.waitUntil(caches.keys().then(function (keys) {
+    return Promise.all(keys.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); }));
+  }).then(function () { return self.clients.claim(); }));
+});
+
+self.addEventListener("fetch", function (e) {
+  var url = new URL(e.request.url);
+  if (e.request.method !== "GET" || url.origin !== location.origin) return;
+  if (url.pathname.indexOf("/static/") === 0) {
+    // static files: cache first, refresh in the background
+    e.respondWith(caches.open(CACHE).then(function (c) {
+      return c.match(e.request).then(function (hit) {
+        var net = fetch(e.request).then(function (res) { if (res.ok) c.put(e.request, res.clone()); return res; });
+        return hit || net;
+      });
+    }));
+  }
+  // everything else (pages, /api, /auth) goes straight to the network
+});
+"""
+
+
 @bp.route("/manifest.webmanifest")
 def manifest():
-    from flask import current_app
-    return current_app.send_static_file("manifest.webmanifest"), 200, {"Content-Type": "application/manifest+json"}
+    return redirect("/static/manifest.webmanifest", code=301)
 
 
 @bp.route("/sw.js")
 def service_worker():
-    from flask import current_app
-    resp = current_app.send_static_file("js/sw.js")
+    resp = make_response(SERVICE_WORKER)
     resp.headers["Content-Type"] = "application/javascript"
     resp.headers["Cache-Control"] = "no-cache"
     return resp
 
-
-# ------------------------------------------------------------------- auth
 
 @bp.route("/auth/config")
 def auth_config():
