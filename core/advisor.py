@@ -100,33 +100,49 @@ def _api_message(r):
         return r.text[:240]
 
 
+GEMINI_FALLBACKS = ("gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite")
+
+
 def _gemini(system, history, message):
-    model = os.getenv("GEMINI_MODEL") or "gemini-3.8-flash"
+    """Ask Gemini. If a model is overloaded (503/500/429), try the next stable one."""
+    first = os.getenv("GEMINI_MODEL") or GEMINI_FALLBACKS[0]
+    models = [first] + [m for m in GEMINI_FALLBACKS if m != first]
     while history and history[0]["role"] == "assistant":  # Gemini wants the user to speak first
         history = history[1:]
     contents = [{"role": "model" if m["role"] == "assistant" else "user", "parts": [{"text": m["content"]}]}
                 for m in history]
     contents.append({"role": "user", "parts": [{"text": message}]})
-    r = requests.post(
-        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-        headers={"x-goog-api-key": os.environ["GEMINI_API_KEY"], "Content-Type": "application/json"},
-        json={
-            "systemInstruction": {"parts": [{"text": system}]},
-            "contents": contents,
-            "generationConfig": {"temperature": 0.4, "maxOutputTokens": 700},
-        },
-        timeout=TIMEOUT,
-    )
-    if r.status_code == 429:
-        raise AdvisorError("Ritu is getting a lot of questions right now (the free AI limit was reached). Try again in a minute.")
-    if r.status_code >= 400:
-        raise AdvisorError(f"Gemini returned an error ({r.status_code}): {_api_message(r)}")
-    data = r.json()
-    try:
-        parts = data["candidates"][0]["content"]["parts"]
-        return "".join(p.get("text", "") for p in parts).strip()
-    except (KeyError, IndexError):
-        raise AdvisorError("Gemini didn't return an answer. Try asking in a different way.")
+    body = {
+        "systemInstruction": {"parts": [{"text": system}]},
+        "contents": contents,
+        "generationConfig": {"temperature": 0.4, "maxOutputTokens": 700},
+    }
+    errors = []
+    for model in models:
+        try:
+            r = requests.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                headers={"x-goog-api-key": os.environ["GEMINI_API_KEY"], "Content-Type": "application/json"},
+                json=body, timeout=12,
+            )
+        except requests.RequestException as exc:
+            errors.append(f"{model}: {type(exc).__name__}")
+            continue
+        if r.status_code in (429, 500, 502, 503, 504, 404):
+            errors.append(f"{model}: {r.status_code} {_api_message(r)[:90]}")
+            continue  # busy or not available: try the next model
+        if r.status_code >= 400:
+            raise AdvisorError(f"Gemini returned an error ({r.status_code}): {_api_message(r)}")
+        data = r.json()
+        try:
+            parts = data["candidates"][0]["content"]["parts"]
+            text = "".join(p.get("text", "") for p in parts).strip()
+        except (KeyError, IndexError):
+            errors.append(f"{model}: no answer")
+            continue
+        if text:
+            return text
+    raise AdvisorError("All Gemini models were busy: " + " | ".join(errors))
 
 
 def _claude(system, history, message):
