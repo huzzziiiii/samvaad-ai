@@ -1,20 +1,38 @@
-{% extends "base.html" %}
-{% block title %}Privacy | Credwise{% endblock %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">{% endblock %}
-
-{% block content %}
-<article class="wrap prose">
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Privacy | Credwise</title>
+  <link rel="icon" href="{{ url_for('static', filename='m/icons/icon-192.png') }}" type="image/png">
+  <style>
+    body { margin: 0; background: #fff; color: #0b0b0c; font: 16px/1.6 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    header { position: sticky; top: 0; display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: #fff; border-bottom: 1px solid #e4e4e8; }
+    header a { color: #087337; font-weight: 700; text-decoration: none; }
+    header .brand { font-size: 20px; letter-spacing: -0.02em; }
+    header .back { margin-left: auto; font-size: 15px; }
+    article { max-width: 680px; margin: 0 auto; padding: 8px 20px 48px; }
+    h1 { font-size: 26px; line-height: 1.25; margin: 22px 0 6px; }
+    h2 { font-size: 18px; margin: 26px 0 6px; color: #087337; }
+    p { margin: 0 0 10px; }
+    .prose-lede { color: #5e5e66; }
+    .fine { margin-top: 26px; font-size: 13.5px; color: #5e5e66; }
+  </style>
+</head>
+<body>
+  <header><a class="brand" href="/app">credwise</a><a class="back" href="/app">Back to the app</a></header>
+<article>
   <h1>How Credwise uses your data</h1>
   <p class="prose-lede">In plain words. If anything here is unclear, ask us before you add your loans.</p>
 
   <h2>What we collect</h2>
-  <p>Your name, email and phone number; your monthly take-home salary and employer if you add them; the loans you enter or that we read from your credit report: type, lender, amount left, interest rate, EMI and foreclosure charge; and your CIBIL score and report if you add them. We never ask for passwords, OTPs, PAN, Aadhaar, card numbers or bank account numbers. Please don't type them anywhere in the app.</p>
+  <p>Your name, email and phone number; your age, monthly take-home salary and company; the loans you enter or that we read from your credit report: type, lender, amount left, interest rate, EMI and foreclosure charge; and your CIBIL score and report if you add them. We never ask for passwords, OTPs, PAN, Aadhaar, card numbers or bank account numbers. Please don't type them anywhere in the app.</p>
 
   <h2>What we use it for</h2>
   <p>To calculate your payoff plan, savings and borrowing room, and, only when you tap "Get this done", so the Credwise team can call you and arrange a balance transfer or loan with a bank you choose. We don't sell your data, and we don't share it with any bank unless you ask us to apply on your behalf.</p>
 
   <h2>Your CIBIL report</h2>
-  <p>If you upload your CIBIL report, we keep the PDF in private storage that only the Credwise team can open, so we can match you with the right bank. To save you typing, an AI service (Anthropic's Claude) reads the report and returns only your score and your open loans: lender, amount left, EMI and rate. Your name, PAN, address and account numbers are not taken from it. Anthropic does not use this data to train its models. We keep only your latest report, and we delete it automatically 6 months after you upload it.</p>
+  <p>If you upload your CIBIL report, we keep the PDF in private storage that only the Credwise team can open, so we can match you with the right bank. To save you typing, an AI service (Anthropic's Claude or Google's Gemini, on paid plans) reads the report and returns only your score and your active loans: lender, amount left, EMI and rate. Your name, PAN, address and account numbers are not taken from it. On these paid plans, neither company uses the data to train its models. We keep only your latest report, and we delete it automatically 6 months after you upload it.</p>
 
   <h2>What the Credwise team sees</h2>
   <p>So we can help you quickly, the Credwise team can see your details, your loans, your requests, and a record of what you do in the app, such as adding a loan, uploading your report or the questions you ask Ritu.</p>
@@ -30,4 +48,5 @@
 
   <p class="fine">Figures in Credwise are estimates based on what you enter and the lender rates we have on file. Final rates, fees and approval are decided by the bank.</p>
 </article>
-{% endblock %}
+</body>
+</html>

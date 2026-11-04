@@ -122,7 +122,7 @@ def login_required(view):
         if not current_user():
             if request.path.startswith("/api/"):
                 return jsonify({"error": "Please sign in again."}), 401
-            return redirect(url_for("customer.login", next=request.path))
+            return redirect(url_for("customer.app_home"))
         return view(*args, **kwargs)
     return wrapper
 
@@ -134,7 +134,7 @@ def admin_required(view):
         if not user:
             if request.path.startswith("/api/"):
                 return jsonify({"error": "Please sign in again."}), 401
-            return redirect(url_for("customer.login", next=request.path))
+            return redirect(url_for("customer.app_home"))
         if not is_admin(user):
             if request.path.startswith("/api/"):
                 return jsonify({"error": "Admins only."}), 403

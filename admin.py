@@ -19,9 +19,10 @@ def _store():
 
 
 @bp.route("/admin")
-@auth.admin_required
 def admin_home():
-    return render_template("admin.html", active="admin")
+    """Admin lives inside the app now."""
+    from flask import redirect, url_for
+    return redirect(url_for("customer.app_home"))
 
 
 @bp.route("/api/admin/summary")

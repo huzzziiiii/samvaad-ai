@@ -1176,6 +1176,7 @@
   $("svc-ritu").addEventListener("click", openRitu);
   $("acc-privacy").addEventListener("click", function (e) { e.preventDefault(); location.href = "/privacy"; });
   $("to-admin").addEventListener("click", function () { customerView(false); if (window.SamvaadAdmin) window.SamvaadAdmin.start(); });
+  $("acc-admin-go").addEventListener("click", function () { customerView(false); if (window.SamvaadAdmin) window.SamvaadAdmin.start(); });
   function signOut() {
     customerView(false);
     if (window.SamvaadAdmin) window.SamvaadAdmin.stop();

@@ -7,7 +7,11 @@ Names, PAN, addresses, phone numbers and account numbers are never returned
 or stored by the app. The PDF itself is kept in private storage for the
 Credwise team.
 
-Needs ANTHROPIC_API_KEY. Without it, customers can still type their score.
+Reader: Claude when ANTHROPIC_API_KEY is set. Otherwise Gemini, but only when
+REPORT_AI=gemini is set, because the report holds the customer's PAN, address
+and loan history: use a Gemini key with billing on (Google's paid tier doesn't
+use the data to improve its products). With neither, the PDF is saved for the
+team and customers type their score.
 """
 import base64
 import io
@@ -54,8 +58,16 @@ class ReportError(RuntimeError):
     pass
 
 
+def reader():
+    if os.getenv("ANTHROPIC_API_KEY"):
+        return "claude"
+    if os.getenv("GEMINI_API_KEY") and (os.getenv("REPORT_AI") or "").lower() == "gemini":
+        return "gemini"
+    return None
+
+
 def enabled():
-    return bool(os.getenv("ANTHROPIC_API_KEY"))
+    return reader() is not None
 
 
 def unlock(data, password=None):
@@ -129,9 +141,45 @@ def _clean(raw):
     return {"bureau": str(raw.get("bureau") or "unknown")[:12], "score": score, "report_date": date, "accounts": accounts}
 
 
+def _gemini_text(pdf_bytes):
+    """Gemini reads the PDF directly. Tries a backup model if the first is busy."""
+    from core.advisor import GEMINI_FALLBACKS
+    first = os.getenv("GEMINI_REPORT_MODEL") or os.getenv("GEMINI_MODEL") or GEMINI_FALLBACKS[0]
+    models = [first] + [m for m in GEMINI_FALLBACKS[:2] if m != first]
+    body = {
+        "contents": [{"role": "user", "parts": [
+            {"inline_data": {"mime_type": "application/pdf", "data": base64.b64encode(pdf_bytes).decode("ascii")}},
+            {"text": PROMPT},
+        ]}],
+        "generationConfig": {"temperature": 0, "maxOutputTokens": 4000, "responseMimeType": "application/json"},
+    }
+    for model in models[:2]:
+        try:
+            r = requests.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                headers={"x-goog-api-key": os.environ["GEMINI_API_KEY"], "Content-Type": "application/json"},
+                json=body, timeout=24,
+            )
+        except requests.RequestException:
+            continue
+        if r.status_code in (429, 500, 502, 503, 504, 404):
+            continue
+        if r.status_code >= 400:
+            raise ReportError(f"Couldn't read the report ({r.status_code}). Type your score instead.")
+        try:
+            parts = r.json()["candidates"][0]["content"]["parts"]
+            return "".join(p.get("text", "") for p in parts)
+        except (KeyError, IndexError, ValueError):
+            continue
+    raise ReportError("Lots of reports are being read right now. Try again in a minute.")
+
+
 def read(pdf_bytes):
-    if not enabled():
+    which = reader()
+    if not which:
         raise ReportError("Reading reports isn't switched on yet. Type your score instead.")
+    if which == "gemini":
+        return _parse(_gemini_text(pdf_bytes))
     model = os.getenv("CLAUDE_REPORT_MODEL") or os.getenv("CLAUDE_MODEL") or "claude-sonnet-5-5"
     try:
         r = requests.post(
@@ -155,6 +203,10 @@ def read(pdf_bytes):
     if r.status_code >= 400:
         raise ReportError(f"Couldn't read the report ({r.status_code}). Type your score instead.")
     text = "".join(b.get("text", "") for b in r.json().get("content", []) if b.get("type") == "text")
+    return _parse(text)
+
+
+def _parse(text):
     m = re.search(r"\{.*\}", text, re.S)
     try:
         raw = json.loads(m.group(0)) if m else {}

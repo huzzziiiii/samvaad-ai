@@ -60,10 +60,8 @@ def loan_line(l):
 
 @bp.route("/login")
 def login():
-    if auth.current_user():
-        return redirect(request.args.get("next") or url_for("customer.app_home"))
-    return render_template("login.html", active="login", config=auth.public_config(),
-                           next=request.args.get("next", ""))
+    """Sign-in happens inside the app."""
+    return redirect(url_for("customer.app_home"))
 
 
 def _asset_version():
@@ -88,13 +86,6 @@ def app_home():
     resp = make_response(render_template("mobile.html", cfg=cfg, v=_asset_version()))
     resp.headers["Cache-Control"] = "no-store"
     return resp
-
-
-@bp.route("/classic")
-@auth.login_required
-def classic_app():
-    """The first web version of the customer app."""
-    return render_template("app.html", active="app", is_admin=auth.is_admin())
 
 
 @bp.route("/privacy")
