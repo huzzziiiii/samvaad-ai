@@ -47,7 +47,7 @@
   // ---- simple screen switching
   var history_ = ["screen-id"];
   var themeMeta = document.querySelector('meta[name="theme-color"]');
-  function statusBar(dark) { if (themeMeta) themeMeta.setAttribute("content", dark ? "#053b1e" : "#ffffff"); }
+  function statusBar(dark) { if (themeMeta) themeMeta.setAttribute("content", "#ffffff"); }
   function show(id) {
     document.querySelectorAll("[data-screen]").forEach(function (s) { s.hidden = s.id !== id; });
     statusBar(id === "screen-home" && !$("tab-home").hidden);
@@ -272,7 +272,7 @@
   var STATUS = { "new": ["Received", "new"], contacted: ["Contacted", "progress"], in_progress: ["In progress", "progress"], done: ["Done", "done"], closed: ["Closed", ""] };
 
   // one colour per loan in the total bar; card debt shows in amber
-  var SEG = ["#8fd3a8", "#56b77e", "#c7ead3", "#2f9a5c", "#a9dcbd", "#6fc492"];
+  var SEG = ["#087337", "#4fae78", "#0a4d29", "#8fd3a8", "#2f9a5c", "#b9e3c8"];
   function paintHome() {
     var ov = D.overview || { loans: [], count: 0 };
     var has = ov.count > 0, p = D.profile || {};

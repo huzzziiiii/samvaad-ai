@@ -867,3 +867,34 @@ body { font-family: "Onest", -apple-system, "Segoe UI", Roboto, "Helvetica Neue"
 .page-home { padding-bottom: 0; }
 .home-sheet { padding-bottom: calc(var(--safe-bottom) + 108px); }
 .tabbtn.is-on .tab-dot { background: #fff; color: var(--brand); }
+
+/* =====================================================================
+   v3: white home top with green Credwise, white floating pill tab bar
+   (the tab you're on turns green).
+   ===================================================================== */
+.page-home { background: #fff; }
+.hero { background: #fff; color: var(--ink); padding-bottom: 8px; }
+.hero .brand { color: var(--brand); }
+.hero .call-pill { background: var(--tint); color: var(--forest); }
+.hero .call-pill:active { background: var(--tint-2); }
+.hero .to-admin { background: var(--forest); color: #fff; }
+.hero-hi { color: var(--ink-2); }
+.hero-label { color: var(--ink); }
+.hero-total { color: var(--forest); }
+.segs span { box-shadow: none; }
+.hero-meta { color: var(--ink-2); }
+.hero-meta b { color: var(--ink); }
+.hero-ask { border: 1px solid var(--tint-2); background: var(--tint); color: var(--forest); font-weight: 500; }
+.hero-ask:active { background: var(--tint-2); }
+.home-sheet { margin-top: 0; border-radius: 0; }
+
+.tabbar {
+  left: 16px; right: 16px; bottom: calc(var(--safe-bottom) + 12px);
+  padding: 6px; border: 1px solid var(--line); border-radius: 999px;
+  background: #fff; box-shadow: 0 8px 28px rgba(19, 32, 26, .14);
+  backdrop-filter: none;
+}
+.tabbtn { border-radius: 999px; padding: 8px 0 6px; color: #7d8a82; }
+.tabbtn.is-on { background: var(--brand); color: #fff; }
+.tabbtn.is-on svg { background: none; padding: 0; }
+.page:not(.page-home), .home-sheet { padding-bottom: calc(var(--safe-bottom) + 112px); }
