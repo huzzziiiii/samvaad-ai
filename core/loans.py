@@ -287,6 +287,20 @@ def payoff_plan(loans, extra=0.0, strategy="avalanche"):
 
 # ------------------------------------------------------- balance transfer
 
+# Card dues and small loans are usually refinanced with a personal loan.
+REFINANCED_AS = {"credit_card": "personal", "consumer": "personal", "other": "personal"}
+# Loans that make sense to merge into one personal loan. Home, car, education and
+# gold loans are secured and usually cheaper, so they're kept separate.
+CONSOLIDATABLE = ("personal", "credit_card", "consumer", "other", "two_wheeler", "business")
+
+
+def offer_fits(offer, loan_type):
+    """Can this bank offer take over a loan of this type?"""
+    if not offer.get("active", True):
+        return False
+    return offer.get("product") in (loan_type, REFINANCED_AS.get(loan_type))
+
+
 def transfer_options(loan, offers, months=None):
     """Net saving from moving one loan to each cheaper offer.
 
@@ -302,7 +316,7 @@ def transfer_options(loan, offers, months=None):
     foreclosure = loan["outstanding"] * loan.get("foreclosure_pct", 0) / 100
     results = []
     for offer in offers:
-        if offer.get("product") != loan["type"] or not offer.get("active", True):
+        if not offer_fits(offer, loan["type"]):
             continue
         lo, hi = float(offer["rate_min"]), float(offer.get("rate_max") or offer["rate_min"])
         if lo >= loan["rate"]:
@@ -388,7 +402,7 @@ def best_banks(loans, offers, profile=None, limit=5):
         current_interest = interest_left(loan["outstanding"], loan["rate"], loan["emi"]) or 0
         foreclosure = loan["outstanding"] * loan.get("foreclosure_pct", 0) / 100
         for offer in offers:
-            if offer.get("product") != loan["type"] or not offer.get("active", True):
+            if not offer_fits(offer, loan["type"]):
                 continue
             rate = likely_rate(offer, score)
             if rate >= loan["rate"]:
@@ -436,6 +450,66 @@ def best_banks(loans, offers, profile=None, limit=5):
         out.append(b)
     out.sort(key=lambda b: (-b["net_saving"], -b["emi_saving"]))
     return out[:limit]
+
+
+def consolidation(selected, offers, profile=None, all_loans=None, limit=5):
+    """Merge the chosen loans into ONE personal loan at a lower rate.
+
+    The new loan pays off every chosen loan. Its tenure is the longest time any
+    of them still had left (capped by the bank and the customer's age), so the
+    monthly EMI goes down. A bank is only shown if the customer still saves
+    money overall after the processing fee and foreclosure charges.
+    """
+    profile = profile or {}
+    chosen = [l for l in selected if l["type"] in CONSOLIDATABLE]
+    if len(chosen) < 2:
+        return {"loans": chosen, "options": [], "reason": "Pick at least two loans to merge."}
+    principal = sum(l["outstanding"] for l in chosen)
+    emi_now = sum(l["emi"] for l in chosen)
+    months_each = [months_to_close(l["outstanding"], l["rate"], l["emi"]) for l in chosen]
+    if not all(months_each):
+        return {"loans": chosen, "options": [], "reason": "One of these loans' EMI is too low to ever close it. Check its EMI."}
+    interest_now = sum(interest_left(l["outstanding"], l["rate"], l["emi"]) or 0 for l in chosen)
+    foreclosure = sum(l["outstanding"] * l.get("foreclosure_pct", 0) / 100 for l in chosen)
+    avg_rate = sum(l["rate"] * l["outstanding"] for l in chosen) / principal
+    age = profile.get("age")
+    try:
+        age_cap = max(12, (RETIRE_AGE - int(age)) * 12) if age else None
+    except (TypeError, ValueError):
+        age_cap = None
+    salary = float(profile.get("salary") or 0)
+    other_emi = sum(l["emi"] for l in (all_loans or chosen)) - emi_now
+
+    options = []
+    for offer in offers:
+        if offer.get("product") != "personal" or not offer.get("active", True):
+            continue
+        rate = likely_rate(offer, profile.get("cibil_score"))
+        if rate >= avg_rate:
+            continue
+        tenure = min(max(months_each), int(offer.get("max_tenure_months") or 60))
+        if age_cap:
+            tenure = min(tenure, age_cap)
+        new_emi = emi(principal, rate, tenure)
+        fee = principal * float(offer.get("processing_fee_pct") or 0) / 100
+        net = interest_now - (new_emi * tenure - principal) - fee - foreclosure
+        if net <= 0:
+            continue
+        options.append({
+            "bank": offer["name"], "bank_id": offer.get("id"),
+            "rate": rate, "rate_range": [float(offer["rate_min"]), float(offer.get("rate_max") or offer["rate_min"])],
+            "tenure_months": tenure, "new_emi": round(new_emi, 0), "emi_saving": round(emi_now - new_emi, 0),
+            "fees": round(fee + foreclosure, 0), "net_saving": round(net, 0),
+            "emi_to_salary_after": round((other_emi + new_emi) / salary * 100) if salary else None,
+        })
+    options.sort(key=lambda o: (-o["net_saving"], -o["emi_saving"]))
+    return {
+        "loans": [{"id": l.get("id"), "type": l["type"], "lender": l.get("lender", ""), "outstanding": round(l["outstanding"], 0),
+                   "rate": l["rate"], "emi": round(l["emi"], 0)} for l in chosen],
+        "principal": round(principal, 0), "emi_now": round(emi_now, 0), "avg_rate": round(avg_rate, 2),
+        "options": options[:limit],
+        "reason": None if options else "None of our partner banks would save you money by merging these loans right now.",
+    }
 
 
 def savings_finder(loans, offers):

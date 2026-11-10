@@ -22,6 +22,7 @@ REQUEST_KINDS = {
     "balance_transfer": "Balance transfer",
     "fresh_loan": "Fresh loan",
     "payoff_help": "Help with my payoff plan",
+    "consolidation": "Consolidate loans",
     "callback": "Call me back",
 }
 REQUEST_STATUSES = ["new", "contacted", "in_progress", "done", "closed"]

@@ -46,8 +46,11 @@
 
   // ---- simple screen switching
   var history_ = ["screen-id"];
+  var themeMeta = document.querySelector('meta[name="theme-color"]');
+  function statusBar(dark) { if (themeMeta) themeMeta.setAttribute("content", "#ffffff"); }
   function show(id) {
     document.querySelectorAll("[data-screen]").forEach(function (s) { s.hidden = s.id !== id; });
+    statusBar(id === "screen-home" && !$("tab-home").hidden);
     if (history_[history_.length - 1] !== id) history_.push(id);
   }
   document.querySelectorAll("[data-back]").forEach(function (b) {
@@ -227,7 +230,7 @@
   // ====================================================================== data
   var D = null;          // everything from /api/home
   var TYPE_NAMES = {};
-  var APP_NAME = { balance_transfer: "Lower my rate", fresh_loan: "New loan", payoff_help: "Close faster", callback: "Call me" };
+  var APP_NAME = { balance_transfer: "Lower my rate", fresh_loan: "New loan", payoff_help: "Close faster", callback: "Call me", consolidation: "Consolidate loans" };
 
   function typeName(t) { return TYPE_NAMES[t] || "Loan"; }
 
@@ -253,6 +256,7 @@
     if (r.kind === "balance_transfer" && d.loan) return typeName(d.loan.type) + " to " + ((d.offer && d.offer.bank) || "a cheaper bank");
     if (r.kind === "fresh_loan") return typeName(d.loan_type) + (d.amount_wanted ? " of " + d.amount_wanted : "");
     if (r.kind === "payoff_help" && d.plan) return inr(d.plan.extra) + " extra a month";
+    if (r.kind === "consolidation" && d.consolidation) return d.consolidation.loans.length + " loans to " + ((d.offer && d.offer.bank) || "one loan");
     if (r.kind === "callback") return (d.call_time || "Any time") + (d.topic ? " · " + d.topic : "");
     return "";
   }
@@ -267,30 +271,43 @@
   // ====================================================================== home
   var STATUS = { "new": ["Received", "new"], contacted: ["Contacted", "progress"], in_progress: ["In progress", "progress"], done: ["Done", "done"], closed: ["Closed", ""] };
 
+  // one colour per loan in the total bar; card debt shows in amber
+  var SEG = ["#087337", "#4fae78", "#0a4d29", "#8fd3a8", "#2f9a5c", "#b9e3c8"];
   function paintHome() {
     var ov = D.overview || { loans: [], count: 0 };
-    var has = ov.count > 0;
-    $("loans-card").querySelector(".big-row").hidden = !has;
-    $("loans-card").querySelector(".bar").hidden = !has || ov.emi_to_salary_pct == null;
-    $("h-free").hidden = !has;
+    var has = ov.count > 0, p = D.profile || {};
+    var first = String(p.name || (D.user && D.user.name) || "").trim().split(/\s+/)[0];
+    $("h-hi").textContent = first ? "Hi " + first : "Hi there";
     $("h-empty").hidden = has;
     $("add-loan").hidden = !has;
-    if (has) {
-      $("h-left").textContent = inr(ov.total_outstanding);
-      $("h-emi").textContent = inr(ov.total_emi);
-      var p = ov.emi_to_salary_pct;
-      $("h-bar").style.width = Math.min(100, p || 0) + "%";
-      $("h-free").textContent = "Debt-free in " + monthsText(ov.months_to_debt_free) + (p != null ? " · EMIs take " + p + "% of your salary" : "");
-    }
+    $("h-count").textContent = has ? ov.count : "";
+    $("h-left").textContent = inr(ov.total_outstanding || 0);
+    $("h-emi").textContent = inr(ov.total_emi || 0);
+    var free = new Date(); free.setMonth(free.getMonth() + (ov.months_to_debt_free || 0));
+    $("h-free").textContent = has ? "Debt-free by " + free.toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : "Add your loans to see your total";
+    var segs = $("h-segs"); segs.textContent = ""; segs.hidden = !has;
+    ov.loans.slice().sort(function (a, b) { return b.outstanding - a.outstanding; }).forEach(function (l, i) {
+      var sp = el("span");
+      sp.style.flexGrow = String(Math.max(l.outstanding, ov.total_outstanding * 0.02));
+      sp.style.background = l.type === "credit_card" ? "#e0a93b" : SEG[i % SEG.length];
+      segs.appendChild(sp);
+    });
     var ul = $("h-loans"); ul.textContent = ""; ul.hidden = !has;
-    ov.loans.forEach(function (l) {
+    ov.loans.slice().sort(function (a, b) { return b.outstanding - a.outstanding; }).forEach(function (l, i) {
       var li = el("li");
-      var left = el("span", "ml-name", typeName(l.type));
-      left.appendChild(el("span", "ml-meta", (l.lender || "Lender not given") + " · " + pct(l.rate)));
+      var dot = el("i", "dot"); dot.style.background = l.type === "credit_card" ? "#e0a93b" : SEG[i % SEG.length];
+      li.appendChild(dot);
+      var left = el("span", "lr-name", typeName(l.type));
+      left.appendChild(el("span", "lr-meta", (l.lender || "Lender not given") + " · " + pct(l.rate) + " · EMI " + inr(l.emi)));
       li.appendChild(left);
-      li.appendChild(el("span", "ml-amt", inr(l.outstanding)));
+      var amt = el("span", "lr-amt", inr(l.outstanding));
+      amt.appendChild(el("span", "lr-share", Math.round(100 * l.outstanding / (ov.total_outstanding || 1)) + "%"));
+      li.appendChild(amt);
+      li.addEventListener("click", function () { openTab("account", "acc-loans"); });
       ul.appendChild(li);
     });
+    var nc = (D.consolidatable || []).length;
+    $("h-consol-sub").textContent = nc >= 2 ? nc + " of your loans can be merged into one EMI" : "Merge several loans into one, at a lower rate";
 
     var bb = (D.best_banks || [])[0];
     $("saving-block").hidden = !bb;
@@ -300,6 +317,7 @@
     }
     paintScore();
     renderActivity($("h-activity"), activityItems().slice(0, 3));
+    $("activity-block").hidden = !activityItems().length;
     $("to-admin").hidden = !D.is_admin;
   }
 
@@ -358,6 +376,7 @@
   function refreshHome() { return loadHome().catch(function (e) { toast(e.message); }); }
 
   var ACT_ICONS = {
+    consolidation: '<path d="M4 6h5l5 6M4 18h5l5-6h6M17 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
     balance_transfer: '<path d="M5 9h12l-3-3M19 15H7l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
     fresh_loan: '<rect x="4" y="7" width="16" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10v5M9.5 12.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
     payoff_help: '<path d="M4 18l6-6 4 3 6-8M15 7h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
@@ -386,6 +405,7 @@
   var TABS = ["home", "services", "activity", "account"];
   function openTab(name, jump) {
     TABS.forEach(function (t) { $("tab-" + t).hidden = t !== name; });
+    statusBar(name === "home");
     document.querySelectorAll(".tabbtn").forEach(function (x) { x.classList.toggle("is-on", x.dataset.tab === name); });
     if (name === "activity") renderActivity($("act-all"), activityItems());
     if (name === "account") renderAccount();
@@ -493,13 +513,16 @@
                  ["Bank approval", "Usually 2 to 5 working days"], ["Money in your account", "Straight from the bank"]],
     payoff_help: [["Our executive calls you", "Within one working day"], ["Your plan, step by step", "Which loan to prepay, and when"],
                   ["Monthly check-ins", "We remind you and track progress"]],
-    callback: [["Our executive calls you", "At the time you picked"]]
+    callback: [["Our executive calls you", "At the time you picked"]],
+    consolidation: [["Our executive calls you", "Within one working day"], ["Documents collected", "Statements for each loan you're merging"],
+                    ["Bank approval", "Usually 3 to 7 working days"], ["Old loans paid off", "You start paying one EMI"]]
   };
   var NEXT = {
     balance_transfer: ["A Credwise executive will be in touch within one working day", "They collect your documents and apply with the bank for you", "No charge to you for our help"],
     fresh_loan: ["A Credwise executive will be in touch within one working day", "They compare banks and apply for you", "No charge to you for our help"],
     payoff_help: ["A Credwise executive will be in touch within one working day", "They help you follow the plan, month by month", "No charge to you for our help"],
-    callback: ["A Credwise executive will call you at the time you picked", "No charge to you for our help"]
+    callback: ["A Credwise executive will call you at the time you picked", "No charge to you for our help"],
+    consolidation: ["A Credwise executive will be in touch within one working day", "The new bank pays off each old loan directly", "No charge to you for our help"]
   };
   // how far along the tracker is, from the status you set in admin
   var PROGRESS = { "new": 1, contacted: 2, in_progress: 3, done: 99, closed: 99 };
@@ -556,6 +579,8 @@
       var li = el("li", i < at ? "on" : i === at ? "now" : "");
       li.appendChild(el("b", null, st[0])); li.appendChild(el("span", null, st[1])); ol.appendChild(li);
     });
+    $("done-guide").hidden = !(status === "done" && GUIDE_KINDS.indexOf(kind) >= 0);
+    $("done-guide").onclick = function () { openGuide(kind, true); };
     if (status === "closed") { var c = el("li", "on"); c.appendChild(el("b", null, "Closed")); c.appendChild(el("span", null, "Call us if you'd like to start again")); ol.appendChild(c); }
     history_ = viewing ? ["screen-home", "screen-bt-done"] : ["screen-home"];
     show("screen-bt-done"); window.scrollTo(0, 0);
@@ -1188,6 +1213,128 @@
     });
   }
   $("sign-out").addEventListener("click", signOut);
+
+  // ============================================================ Consolidate loans
+  var cs = { picked: {} };
+  function openConsol() {
+    var ov = (D && D.overview) || { loans: [] }, ok = D.consolidatable || [];
+    var ul = $("cs-picks"); ul.textContent = ""; cs.picked = {};
+    var excluded = [];
+    ov.loans.forEach(function (l) {
+      if (ok.indexOf(l.id) < 0) { excluded.push(typeName(l.type)); return; }
+      cs.picked[l.id] = true;
+      var li = el("li"), lab = el("label", "cs-pick");
+      var cb = el("input"); cb.type = "checkbox"; cb.checked = true;
+      cb.addEventListener("change", function () { cs.picked[l.id] = cb.checked; quote(); });
+      lab.appendChild(cb);
+      var t = el("span", "cs-name", typeName(l.type)); t.appendChild(el("span", "lr-meta", (l.lender || "Lender not given") + " · " + pct(l.rate)));
+      lab.appendChild(t); lab.appendChild(el("span", "lr-amt", inr(l.outstanding)));
+      li.appendChild(lab); ul.appendChild(li);
+    });
+    $("cs-excluded").hidden = !excluded.length;
+    $("cs-excluded").textContent = excluded.length ? "Not shown: your " + excluded.join(", ").toLowerCase() + ". Secured loans like these usually have lower rates, so they're better kept separate." : "";
+    history_ = ["screen-home", "screen-consol"]; show("screen-consol"); window.scrollTo(0, 0);
+    quote();
+  }
+  function quote() {
+    var ids = Object.keys(cs.picked).filter(function (k) { return cs.picked[k]; });
+    $("cs-list").textContent = ""; $("cs-sum").hidden = true;
+    if (ids.length < 2) { $("cs-empty").hidden = false; $("cs-empty-text").textContent = "Pick at least two loans to merge."; return; }
+    $("cs-empty").hidden = true;
+    var my = ++cs.seq || (cs.seq = 1);
+    api("POST", "/api/consolidate", { loan_ids: ids }).then(function (r) {
+      if (my !== cs.seq) return;
+      $("cs-sum").hidden = false;
+      $("cs-total").textContent = inr(r.principal); $("cs-emi").textContent = inr(r.emi_now); $("cs-rate").textContent = pct(r.avg_rate);
+      if (!r.options.length) { $("cs-empty").hidden = false; $("cs-empty-text").textContent = r.reason; return; }
+      r.options.forEach(function (o, i) {
+        var li = el("li", "bk" + (i === 0 ? " bk-top" : ""));
+        var head = el("div", "bk-head"); head.appendChild(el("span", "lender-mark", initials(o.bank)));
+        var nm = el("div"); nm.appendChild(el("b", null, o.bank)); nm.appendChild(el("span", null, pct(o.rate) + " a year for " + monthsText(o.tenure_months)));
+        head.appendChild(nm); if (i === 0) head.appendChild(el("span", "bk-badge", "Best for you"));
+        li.appendChild(head);
+        var nums = el("div", "bk-nums");
+        var a = el("div"); a.appendChild(el("span", null, "One EMI")); a.appendChild(el("b", null, inr(r.emi_now) + " → " + inr(o.new_emi)));
+        a.appendChild(el("i", null, o.emi_saving > 0 ? inr(o.emi_saving) + " less a month" : "same EMI, less interest"));
+        var b = el("div"); b.appendChild(el("span", null, "You save")); b.appendChild(el("b", "bk-save", inr(o.net_saving))); b.appendChild(el("i", null, "after " + inr(o.fees) + " fees"));
+        nums.appendChild(a); nums.appendChild(b); li.appendChild(nums);
+        if (o.emi_to_salary_after != null) li.appendChild(el("p", "bk-note", "Your EMIs would be " + o.emi_to_salary_after + "% of your salary after this."));
+        var go = el("button", "btn-main btn-small" + (i === 0 ? "" : " btn-ghost"), "Get this offer"); go.type = "button";
+        go.addEventListener("click", function () {
+          openConfirm({ kind: "consolidation", doneText: "Consolidate " + ids.length + " loans with " + o.bank,
+            rows: [["Loans merged", ids.length + " · " + inr(r.principal)], ["New loan", o.bank + " at " + pct(o.rate)],
+                   ["Tenure", monthsText(o.tenure_months)], ["EMI", inr(r.emi_now) + " → " + inr(o.new_emi) + " a month"],
+                   ["Fees", inr(o.fees) + " (counted)"], ["You save", inr(o.net_saving), true]],
+            payload: { loan_ids: ids, bank_id: o.bank_id } });
+        });
+        li.appendChild(go); $("cs-list").appendChild(li);
+      });
+    }).catch(function (err) { $("cs-empty").hidden = false; $("cs-empty-text").textContent = err.message; });
+  }
+  $("h-consol").addEventListener("click", openConsol);
+  $("svc-consol").addEventListener("click", openConsol);
+
+  // ============================================================ Compare banks
+  function openBankList(product) {
+    var groups = (D && D.bank_list) || [];
+    if (!groups.length) { toast("Bank rates are being updated. Call us for the latest offers."); return; }
+    var g = groups.find(function (x) { return x.product === product; }) || groups[0];
+    var chips = $("bl-chips"); chips.textContent = "";
+    groups.forEach(function (x) {
+      var c = el("button", "chip", x.label.replace(/ loan$/, "")); c.type = "button"; c.setAttribute("role", "radio");
+      c.setAttribute("aria-checked", String(x === g));
+      c.addEventListener("click", function () { openBankList(x.product); });
+      chips.appendChild(c);
+    });
+    $("bl-title").textContent = g.label + " rates";
+    var ul = $("bl-list"); ul.textContent = "";
+    g.banks.forEach(function (b) {
+      var li = el("li");
+      li.appendChild(el("span", "lender-mark", initials(b.name)));
+      var nm = el("span", "bl-name", b.name);
+      nm.appendChild(el("span", "lr-meta", "Fee " + (b.fee_pct ? b.fee_pct + "%" : "nil") + (b.max_tenure_months ? " · up to " + monthsText(b.max_tenure_months) : "")));
+      li.appendChild(nm);
+      var r = el("span", "bl-rate", pct(b.rate_min)); r.appendChild(el("span", "lr-share", "to " + pct(b.rate_max)));
+      li.appendChild(r); ul.appendChild(li);
+    });
+    if (history_[history_.length - 1] !== "screen-banklist") history_.push("screen-banklist");
+    show("screen-banklist"); window.scrollTo(0, 0);
+  }
+  $("h-banklist").addEventListener("click", function () { history_ = ["screen-home"]; openBankList(((D.overview || {}).loans || [{}])[0].type === "home" ? "home" : "personal"); });
+  $("svc-banks").addEventListener("click", function () { history_ = ["screen-home"]; openBankList("personal"); });
+
+  // ============================================================ After disbursement
+  var GUIDE_KINDS = ["balance_transfer", "consolidation", "fresh_loan"];
+  var GUIDE_MOVE = [
+    ["Confirm your old loans are closed", "The new bank pays your old lender directly. Within a week, call the old lender or check their app to confirm the balance is zero."],
+    ["Get a closure letter for each old loan", "Ask for the NOC or closure letter (a no-dues letter for credit cards). Keep a PDF safely: it's your proof if anything goes wrong."],
+    ["Stop the old auto-debits", "Make sure the old EMI mandate is cancelled so you aren't charged twice. If an old EMI still gets debited, ask for a refund straight away."],
+    ["Set up your new EMI", "Note the first EMI date and set up auto-debit. Keep at least one EMI extra in that account so nothing bounces."],
+    ["Save your loan papers", "Keep the sanction letter, loan agreement and repayment schedule. Check the rate and any insurance added to the loan."],
+    ["Check your CIBIL report in about a month", "Old loans should show as Closed and the new one as active. If not, raise a dispute with the bureau and attach your closure letters."],
+    ["Pause new borrowing for a while", "Avoid new loans and card applications for a few months, and pay every EMI on time. Your score improves faster."]
+  ];
+  var GUIDE_FRESH = [
+    ["Check the amount you received", "It should be the sanctioned amount minus the processing fee and any insurance. Ask the bank for the breakup if it doesn't match."],
+    ["Set up your EMI", "Note the first EMI date and set up auto-debit. Keep at least one EMI extra in that account so nothing bounces."],
+    ["Save your loan papers", "Keep the sanction letter, loan agreement and repayment schedule. If insurance you didn't want was added, ask about cancelling it within its free-look period."],
+    ["Use it for what you borrowed it for", "Keep bills and receipts. Home and education loans can also save you tax, so share them with whoever files your return."],
+    ["Check your CIBIL report in about a month", "The new loan should show with the right amount and EMI. Raise a dispute with the bureau if anything is wrong."],
+    ["Prepay when you can", "Paying a little extra cuts interest. Ask the bank about part-prepayment charges first, or open Close faster in the app."]
+  ];
+  function openGuide(kind, fromTracker) {
+    var steps = kind === "fresh_loan" ? GUIDE_FRESH : GUIDE_MOVE;
+    $("gd-title").textContent = kind === "fresh_loan" ? "Your loan is in your account. Here's what to do next." : "Your new loan is disbursed. Here's what to do next.";
+    var ol = $("gd-steps"); ol.textContent = "";
+    steps.forEach(function (st) { var li = el("li"); li.appendChild(el("b", null, st[0])); li.appendChild(el("span", null, st[1])); ol.appendChild(li); });
+    history_ = fromTracker ? ["screen-home", "screen-bt-done", "screen-guide"] : ["screen-home", "screen-guide"];
+    show("screen-guide"); window.scrollTo(0, 0);
+  }
+  $("svc-guide").addEventListener("click", function () {
+    var r = (D.requests || []).find(function (x) { return x.status === "done" && GUIDE_KINDS.indexOf(x.kind) >= 0; });
+    openGuide(r ? r.kind : "balance_transfer", false);
+  });
+  $("h-empty-add").addEventListener("click", function () { $("add-loan").click(); });
 
   // ---- wire the service tiles
   var SERVICES = { balance_transfer: openBtLoans, fresh_loan: openNlTypes, payoff_help: openPayoff, callback: openCallback };

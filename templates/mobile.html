@@ -10,6 +10,9 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Credwise">
   <link rel="manifest" href="/static/manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Onest:wght@400..700&display=swap" rel="stylesheet">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='m/icons/apple-touch-icon.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='m/app.css') }}?v={{ v }}">
 </head>
@@ -161,80 +164,65 @@
 
   <!-- 3. Home (inside the app) -->
   <div class="shell" id="screen-home" data-screen hidden>
-    <main class="page" id="tab-home">
-      <header class="home-top">
-        <span class="brand">credwise</span>
-        <button class="call-pill to-admin" type="button" id="to-admin" hidden>Back to admin</button>
-        <button class="call-pill" type="button" data-call aria-label="Call Credwise">
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
-        <span>Call us</span>
-      </button>
-      </header>
-
-      <button class="search" type="button" id="ask-bar">
-        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-        <span>Ask Ritu about your loans</span>
-      </button>
-
-      <section class="block">
-        <div class="block-head">
-          <h2>Services</h2>
-          <button class="see-all" type="button" data-tab="services">See all</button>
+    <main class="page page-home" id="tab-home">
+      <section class="hero" aria-labelledby="h-total-label">
+        <header class="home-top hero-top">
+          <span class="brand">credwise</span>
+          <button class="call-pill to-admin" type="button" id="to-admin" hidden>Back to admin</button>
+          <button class="call-pill" type="button" data-call aria-label="Call Credwise">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
+            <span>Call us</span>
+          </button>
+        </header>
+        <p class="hero-hi" id="h-hi">Hi there</p>
+        <p class="hero-label" id="h-total-label">Total loans</p>
+        <p class="hero-total" id="h-left">₹0</p>
+        <div class="segs" id="h-segs" aria-hidden="true"></div>
+        <div class="hero-meta">
+          <span>EMI <b id="h-emi">₹0</b> a month</span>
+          <span id="h-free"></span>
         </div>
-        <div class="tiles">
-          <button class="tile" type="button" data-service="balance_transfer">
-            <span class="tile-icon">
-              <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><path d="M6 11h17l-4-4M26 21H9l4 4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            <span class="tile-name">Lower my rate</span>
-          </button>
-          <button class="tile" type="button" data-service="fresh_loan">
-            <span class="tile-icon">
-              <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect x="5" y="9" width="22" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 13v7M12.5 16.5h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-            </span>
-            <span class="tile-name">New loan</span>
-          </button>
-          <button class="tile" type="button" data-service="payoff_help">
-            <span class="tile-icon">
-              <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><path d="M5 24l7-7 5 4 10-11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 10h6v6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            <span class="tile-name">Close faster</span>
-          </button>
-          <button class="tile" type="button" data-service="callback">
-            <span class="tile-icon">
-              <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><path d="M9 5h4l2 6-3 2a14 14 0 007 7l2-3 6 2v4a2 2 0 01-2 2A20 20 0 017 7a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
-            </span>
-            <span class="tile-name">Call me</span>
-          </button>
-        </div>
+        <button class="hero-ask" type="button" id="ask-bar">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 18.5V6.5A1.5 1.5 0 016.5 5h11A1.5 1.5 0 0119 6.5v8a1.5 1.5 0 01-1.5 1.5H8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span>Ask Ritu about your loans</span>
+        </button>
       </section>
 
-      <section class="block">
-        <div class="block-head">
-          <h2>Your loans</h2>
-          <button class="see-all" type="button" data-tab="account" data-jump="acc-loans">Manage</button>
-        </div>
-        <div class="card loans-card" id="loans-card">
-          <div class="big-row">
-            <div>
-              <p class="label">Left to pay</p>
-              <p class="big" id="h-left">—</p>
-            </div>
-            <div class="right">
-              <p class="label">EMI / month</p>
-              <p class="mid" id="h-emi">—</p>
-            </div>
+      <div class="home-sheet">
+        <section class="block" id="loans-card">
+          <div class="block-head">
+            <h2>Your loans <span class="count" id="h-count"></span></h2>
+            <button class="see-all" type="button" id="add-loan">+ Add</button>
           </div>
-          <div class="bar"><span id="h-bar"></span></div>
-          <p class="sub" id="h-free">—</p>
-          <ul class="mini-loans" id="h-loans"></ul>
+          <ul class="loan-rows" id="h-loans"></ul>
           <div class="h-empty" id="h-empty" hidden>
             <p><b>Add your loans to get started</b>Upload your CIBIL report and we'll add them all, or add one yourself.</p>
             <button class="btn-main btn-small" type="button" id="h-empty-cibil">Upload CIBIL report</button>
+            <button class="btn-link" type="button" id="h-empty-add">Add a loan yourself</button>
           </div>
-          <button class="btn-add" type="button" id="add-loan">+ Add a loan</button>
-        </div>
-      </section>
+        </section>
+
+        <section class="block" id="options-block">
+          <div class="block-head"><h2>What you can do</h2></div>
+          <div class="options">
+            <button class="option" type="button" id="h-consol">
+              <span class="option-icon" aria-hidden="true"><svg viewBox="0 0 32 32" width="28" height="28"><path d="M6 8h8l4 8M6 24h8l4-8h8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 12l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <b>Consolidate loans</b>
+              <span id="h-consol-sub">Merge several loans into one, at a lower rate</span>
+            </button>
+            <button class="option" type="button" data-service="fresh_loan">
+              <span class="option-icon" aria-hidden="true"><svg viewBox="0 0 32 32" width="28" height="28"><rect x="5" y="9" width="22" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 13v7M12.5 16.5h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+              <b>Take a fresh loan</b>
+              <span>See how much banks will lend you</span>
+            </button>
+          </div>
+          <ul class="quick">
+            <li><button type="button" data-service="balance_transfer"><span>Lower my rate</span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+            <li><button type="button" data-service="payoff_help"><span>Close faster</span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+            <li><button type="button" id="h-banklist"><span>Compare banks</span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+            <li><button type="button" data-service="callback"><span>Call me back</span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+          </ul>
+        </section>
 
       <section class="block">
         <button class="card score-row" type="button" id="h-score">
@@ -260,6 +248,7 @@
         <div class="block-head"><h2>Activity</h2><button class="see-all" type="button" data-tab="activity">See all</button></div>
         <div class="card activity-card" id="h-activity"></div>
       </section>
+      </div>
     </main>
 
     <!-- Services tab -->
@@ -269,6 +258,7 @@
       <ul class="svc-list">
         <li><button class="svc" type="button" data-service="balance_transfer"><span class="tile-icon"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M6 11h17l-4-4M26 21H9l4 4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Lower my rate</b><span>Move a loan to a cheaper bank. We count every fee first.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
         <li><button class="svc" type="button" data-service="fresh_loan"><span class="tile-icon"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><rect x="5" y="9" width="22" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 13v7M12.5 16.5h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><span class="svc-body"><b>New loan</b><span>See how much you can borrow and get the best offer.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" id="svc-consol"><span class="tile-icon"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M6 8h8l4 8M6 24h8l4-8h8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 12l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Consolidate loans</b><span>Merge several loans into one EMI at a lower rate.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
         <li><button class="svc" type="button" data-service="payoff_help"><span class="tile-icon"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M5 24l7-7 5 4 10-11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 10h6v6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Close faster</b><span>A plan to become debt-free sooner and pay less interest.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
         <li><button class="svc" type="button" data-service="callback"><span class="tile-icon"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M9 5h4l2 6-3 2a14 14 0 007 7l2-3 6 2v4a2 2 0 01-2 2A20 20 0 017 7a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Call me</b><span>Pick a time and our executive calls you.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
       </ul>
@@ -276,6 +266,8 @@
       <ul class="svc-list">
         <li><button class="svc" type="button" id="svc-cibil"><span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 16a8 8 0 0116 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 16l4-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="svc-body"><b>CIBIL score</b><span>Check your score free and add your loans in one go.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
         <li><button class="svc" type="button" id="svc-add"><span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="svc-body"><b>Add a loan</b><span>Type in a loan the report didn't show.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" id="svc-banks"><span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 9l9-5 9 5M5 10v7M9.5 10v7M14.5 10v7M19 10v7M3 20h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Compare banks</b><span>Rates and fees from every bank we work with.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" id="svc-guide"><span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 4h9l3 3v13H6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 11h6M9 15h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span class="svc-body"><b>After your loan is disbursed</b><span>What to do next, step by step.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
         <li><button class="svc" type="button" id="svc-ritu"><span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 18.5V6.5A1.5 1.5 0 016.5 5h11A1.5 1.5 0 0119 6.5v8a1.5 1.5 0 01-1.5 1.5H8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Ask Ritu</b><span>Questions about your loans, in English or Hindi.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
         <li><button class="svc" type="button" data-call><span class="tile-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="svc-body"><b>Talk to an executive</b><span>Call or WhatsApp us, Monday to Saturday.</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
       </ul>
@@ -601,6 +593,59 @@
     </div>
   </main>
 
+  <!-- Consolidate: pick loans, compare one merged loan -->
+  <main class="screen flow-screen" id="screen-consol" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">Consolidate loans</span>
+    </header>
+    <h1 class="ask">Which loans should we merge?</h1>
+    <p class="sub cs-sub">One new loan pays them all off. You pay one EMI, at a lower rate.</p>
+    <ul class="cs-picks" id="cs-picks"></ul>
+    <p class="fine-inline" id="cs-excluded" hidden></p>
+    <div class="cs-sum" id="cs-sum" hidden>
+      <div><span>Merging</span><b id="cs-total">—</b></div>
+      <div><span>EMI today</span><b id="cs-emi">—</b></div>
+      <div><span>Average rate</span><b id="cs-rate">—</b></div>
+    </div>
+    <ol class="bk-list" id="cs-list"></ol>
+    <div class="h-empty" id="cs-empty" hidden><p id="cs-empty-text"></p></div>
+    <p class="fine-inline">The new loan's tenure matches the longest loan you're merging, so your monthly EMI drops. Savings count the bank's processing fee and your current lenders' foreclosure charges. Rates are matched to your CIBIL score; the bank decides the final rate.</p>
+  </main>
+
+  <!-- Compare banks: every partner bank's rates and fees -->
+  <main class="screen flow-screen" id="screen-banklist" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">Compare banks</span>
+    </header>
+    <h1 class="ask" id="bl-title">Banks we work with</h1>
+    <div class="chips bl-chips" id="bl-chips" role="radiogroup" aria-label="Loan type"></div>
+    <ul class="bl-list" id="bl-list"></ul>
+    <p class="fine-inline">Rates and fees are from each bank's published rate card. Your actual rate depends on your CIBIL score, salary and the bank's checks. Fees are shown before GST.</p>
+  </main>
+
+  <!-- After disbursement: what to do next -->
+  <main class="screen flow-screen" id="screen-guide" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">After disbursement</span>
+    </header>
+    <h1 class="ask" id="gd-title">Your loan is disbursed. Here's what to do next.</h1>
+    <ol class="guide" id="gd-steps"></ol>
+    <div class="exec-card gd-help">
+      <span class="exec-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M7 4h3l1.5 4.5-2.2 1.5a11 11 0 005 5l1.5-2.2L20 14.5v3a2 2 0 01-2 2A15.5 15.5 0 015 6a2 2 0 012-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
+      <span><b>Stuck on any step?</b><span>Call or WhatsApp your Credwise executive. We stay with you until your old loans are closed.</span></span>
+    </div>
+    <div class="dock"><button class="btn-main" type="button" data-call>Talk to your executive</button></div>
+  </main>
+
   <!-- Add a loan: 1 type -->
   <main class="screen flow-screen" id="screen-add-type" data-screen hidden>
     <header class="top bar-top">
@@ -765,6 +810,11 @@
     </div>
 
     <ol class="track" id="done-track"></ol>
+
+    <button class="guide-cta" type="button" id="done-guide" hidden>
+      <span><b>Your loan is disbursed</b><span>Here's what to do next, so nothing slips</span></span>
+      <svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
 
     <div class="dock">
       <button class="btn-main" type="button" id="done-home">Back to home</button>
