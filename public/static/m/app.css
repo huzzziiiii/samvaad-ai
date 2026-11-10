@@ -853,3 +853,17 @@ body { font-family: "Onest", -apple-system, "Segoe UI", Roboto, "Helvetica Neue"
 .guide-cta span span { display: block; margin-top: 2px; font-size: 13.5px; color: rgba(255, 255, 255, .8); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* floating pill tab bar: white pill, the open tab is a green pill */
+.tabbar {
+  left: 16px; right: 16px; bottom: calc(var(--safe-bottom) + 12px); padding: 6px;
+  border: 1px solid var(--line); border-radius: 999px; background: #fff;
+  box-shadow: 0 8px 28px rgba(5, 59, 30, .16); backdrop-filter: none;
+}
+.tabbtn { border-radius: 999px; padding: 8px 0 6px; color: #7d8a82; transition: background .18s, color .18s; }
+.tabbtn.is-on { background: var(--brand); color: #fff; }
+.tabbtn.is-on svg { background: none; padding: 0; }
+.page { padding-bottom: calc(var(--safe-bottom) + 104px); }
+.page-home { padding-bottom: 0; }
+.home-sheet { padding-bottom: calc(var(--safe-bottom) + 108px); }
+.tabbtn.is-on .tab-dot { background: #fff; color: var(--brand); }
