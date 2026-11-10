@@ -406,7 +406,7 @@ def new_request():
         return jsonify({"error": "Unknown request type."}), 400
     phone = "".join(ch for ch in str(data.get("phone") or "") if ch.isdigit() or ch == "+")
     if len(phone.lstrip("+")) < 10:
-        return jsonify({"error": "Add a phone number so the Samvaad team can call you."}), 400
+        return jsonify({"error": "Add a phone number so the Credwise team can call you."}), 400
     if len(store.list_requests(uid)) >= 50:
         return jsonify({"error": "You have too many open requests. The team will get back to you."}), 429
     if limits.over_daily(store, uid, "request"):
@@ -447,13 +447,21 @@ def new_request():
                        eligibility=L.eligibility(profile.get("salary"), loans, bank_offers, loan_type))
     elif kind == "payoff_help":
         details.update(plan=L.payoff_plan(loans, float(data.get("extra") or 0)))
+    elif kind == "consolidation":
+        ids = set(data.get("loan_ids") or [])
+        result = L.consolidation([l for l in loans if l["id"] in ids], bank_offers, profile, loans)
+        if not result["options"]:
+            return jsonify({"error": result["reason"] or "Pick the loans you want to merge."}), 400
+        chosen = next((o for o in result["options"] if o["bank_id"] == data.get("bank_id")), result["options"][0])
+        details.update(consolidation={k: v for k, v in result.items() if k != "options"}, offer=chosen)
     if kind == "callback":
         details.update(call_time=str(data.get("call_time") or "")[:60], topic=str(data.get("topic") or "")[:60])
     req_id = store.create_request(uid, kind, details)
     what = {"balance_transfer": lambda: f"{L.LOAN_TYPES.get(details['loan']['type'])} → {(details.get('offer') or {}).get('bank', 'best offer')}",
             "fresh_loan": lambda: f"{L.LOAN_TYPES.get(details['loan_type'])}, {details.get('amount_wanted') or 'amount not given'}",
             "payoff_help": lambda: f"Extra {L.inr(float(data.get('extra') or 0))} a month",
-            "callback": lambda: f"{details.get('call_time') or 'any time'} · {details.get('topic') or ''}".strip(" ·")}
+            "callback": lambda: f"{details.get('call_time') or 'any time'} · {details.get('topic') or ''}".strip(" ·"),
+            "consolidation": lambda: f"{len(details['consolidation']['loans'])} loans ({L.inr(details['consolidation']['principal'])}) → {details['offer']['bank']} at {details['offer']['rate']}%"}
     try:
         line = what[kind]()
     except Exception:
@@ -554,6 +562,8 @@ def home_data():
         "overview": L.overview(loans, profile.get("salary")),
         "transfers": L.savings_finder(loans, bank_offers),
         "best_banks": L.best_banks(loans, bank_offers, profile),
+        "bank_list": bank_list(bank_offers),
+        "consolidatable": [l["id"] for l in loans if l["type"] in L.CONSOLIDATABLE],
         "plans": plans,
         "eligibility": elig,
         "requests": store.list_requests(uid),
@@ -563,6 +573,36 @@ def home_data():
         "is_admin": auth.is_admin(),
         "voice": bool(os.getenv("SARVAM_API_KEY")),
     })
+
+
+def bank_list(bank_offers):
+    """Every active partner bank, grouped by loan type, lowest rate first."""
+    out = []
+    for key, label in L.LOAN_TYPES.items():
+        rows = sorted((o for o in bank_offers if o.get("product") == key and o.get("active", True)),
+                      key=lambda o: float(o["rate_min"]))
+        if rows:
+            out.append({"product": key, "label": label, "banks": [{
+                "name": o["name"], "rate_min": float(o["rate_min"]),
+                "rate_max": float(o.get("rate_max") or o["rate_min"]),
+                "fee_pct": float(o.get("processing_fee_pct") or 0),
+                "max_tenure_months": o.get("max_tenure_months"),
+            } for o in rows]})
+    return out
+
+
+@bp.route("/api/consolidate", methods=["POST"])
+@auth.login_required
+def consolidate_quote():
+    """What merging the chosen loans into one would look like, per bank."""
+    store, err = store_or_error()
+    if err:
+        return err
+    uid = user_id()
+    ids = set((request.get_json(silent=True) or {}).get("loan_ids") or [])
+    loans = load_loans(store, uid)
+    profile = store.get_profile(uid) or {}
+    return jsonify(L.consolidation([l for l in loans if l["id"] in ids], offers(store), profile, loans))
 
 
 # ---------------------------------------------------------------- CIBIL

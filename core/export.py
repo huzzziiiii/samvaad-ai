@@ -57,6 +57,9 @@ def _summary(kind, d):
         if d.get("amount_wanted"):
             s += f", wants {d['amount_wanted']}"
         return s
+    if kind == "consolidation" and d.get("consolidation"):
+        c, o = d["consolidation"], d.get("offer") or {}
+        return f"Merge {len(c.get('loans') or [])} loans ({L.inr(c.get('principal') or 0)}) → {o.get('bank')} at {_pct(o.get('rate'))}, EMI {L.inr(c.get('emi_now') or 0)} → {L.inr(o.get('new_emi') or 0)}"
     if kind == "payoff_help" and d.get("plan"):
         p = d["plan"]
         return f"Extra {L.inr(p.get('extra') or 0)}/month, {p.get('months_saved')} months sooner"
@@ -115,8 +118,8 @@ def build_workbook(store):
             p.get("city") or "",
             _num(p.get("salary") or d.get("salary")),
             _summary(r.get("kind"), d),
-            _num((offer.get("best") or {}).get("net_saving")),
-            _num((offer.get("cautious") or {}).get("net_saving")),
+            _num((offer.get("best") or {}).get("net_saving") or offer.get("net_saving")),
+            _num((offer.get("cautious") or {}).get("net_saving") or offer.get("net_saving")),
             d.get("note") or "",
             r.get("admin_note") or "",
         ])
