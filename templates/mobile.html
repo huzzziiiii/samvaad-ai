@@ -194,7 +194,12 @@
             <h2>Your loans <span class="count" id="h-count"></span></h2>
             <button class="see-all" type="button" id="add-loan">+ Add</button>
           </div>
-          <ul class="loan-rows" id="h-loans"></ul>
+          <ul class="loan-cards" id="h-loans"></ul>
+          <div class="proceed-box" id="h-proceed-box" hidden>
+            <p>Added all your loans? We'll check every bank for a lower rate.</p>
+            <button class="btn-main" type="button" id="h-proceed">Proceed</button>
+            <button class="btn-link" type="button" id="h-add-more">+ Add another loan</button>
+          </div>
           <div class="h-empty" id="h-empty" hidden>
             <p><b>Add your loans to get started</b>Upload your CIBIL report and we'll add them all, or add one yourself.</p>
             <button class="btn-main btn-small" type="button" id="h-empty-cibil">Upload CIBIL report</button>
@@ -303,8 +308,8 @@
       </form>
 
       <h2 class="list-head" id="acc-loans">My loans</h2>
-      <div class="card">
-        <ul class="mini-loans acc-loans" id="acc-loan-list"></ul>
+      <div class="acc-loans-wrap">
+        <ul class="loan-cards acc-cards" id="acc-loan-list"></ul>
         <button class="btn-add" type="button" id="acc-add">+ Add a loan</button>
       </div>
 

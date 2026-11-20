@@ -898,3 +898,39 @@ body { font-family: "Onest", -apple-system, "Segoe UI", Roboto, "Helvetica Neue"
 .tabbtn.is-on { background: var(--brand); color: #fff; }
 .tabbtn.is-on svg { background: none; padding: 0; }
 .page:not(.page-home), .home-sheet { padding-bottom: calc(var(--safe-bottom) + 112px); }
+
+/* =====================================================================
+   v4: roomier loan cards with the interest rate highlighted, and a
+   Proceed step once the customer has added their loans.
+   ===================================================================== */
+.loan-cards { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 12px; }
+.loan-cards .empty { padding: 18px; border-radius: 16px; background: var(--fill); color: var(--ink-2); font-size: 14.5px; }
+.loan-card {
+  padding: 18px 18px 16px; border: 1px solid var(--line); border-radius: 18px; background: #fff; cursor: pointer;
+}
+.loan-card:active { background: var(--fill); }
+.loan-card.just-added { animation: flash 1.6s ease-out; }
+.lc-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.lc-name { display: flex; align-items: center; gap: 10px; font-size: 16.5px; font-weight: 600; min-width: 0; }
+.lc-name .dot { flex: none; width: 10px; height: 10px; border-radius: 3px; }
+.lc-amt { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lc-lender { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 4px 0 0 20px; font-size: 14px; color: var(--ink-2); }
+.lc-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 0 20px; }
+.rate-pill, .emi-pill { display: inline-flex; align-items: baseline; gap: 5px; padding: 7px 11px; border-radius: 12px; white-space: nowrap; }
+.rate-pill { background: var(--tint); color: var(--forest); }
+.rate-pill b { font-family: var(--display); font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rate-pill span { font-size: 12.5px; font-weight: 500; }
+.rate-pill.is-high { background: #fdeceb; color: #a12a1f; }
+.emi-pill { background: var(--fill); color: var(--ink); }
+.emi-pill b { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.emi-pill span { font-size: 12.5px; color: var(--ink-2); }
+.lc-del { flex: none; padding: 4px 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 500; color: #a12a1f; cursor: pointer; }
+
+.proceed-box { margin-top: 16px; padding: 18px; border-radius: 18px; background: var(--tint); text-align: center; }
+.proceed-box p { margin: 0 0 12px; font-size: 14.5px; color: #3d5a48; }
+.proceed-box .btn-main { width: 100%; }
+.proceed-box .btn-link { margin-top: 8px; color: var(--forest); font-weight: 600; }
+
+.acc-cards { margin: 0 0 12px; }
+.acc-cards .loan-card { cursor: default; }
+.acc-cards .loan-card:active { background: #fff; }
