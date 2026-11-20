@@ -57,6 +57,10 @@ def _summary(kind, d):
         if d.get("amount_wanted"):
             s += f", wants {d['amount_wanted']}"
         return s
+    if kind == "loan_review":
+        loans = d.get("loans") or []
+        best = (d.get("best_banks") or [None])[0]
+        return f"{len(loans)} loans" + (f", best: {best['bank']} saves {best['net_saving']}" if best else "")
     if kind == "consolidation" and d.get("consolidation"):
         c, o = d["consolidation"], d.get("offer") or {}
         return f"Merge {len(c.get('loans') or [])} loans ({L.inr(c.get('principal') or 0)}) → {o.get('bank')} at {_pct(o.get('rate'))}, EMI {L.inr(c.get('emi_now') or 0)} → {L.inr(o.get('new_emi') or 0)}"

@@ -24,6 +24,7 @@ REQUEST_KINDS = {
     "payoff_help": "Help with my payoff plan",
     "consolidation": "Consolidate loans",
     "callback": "Call me back",
+    "loan_review": "Review my loans",
 }
 REQUEST_STATUSES = ["new", "contacted", "in_progress", "done", "closed"]
 

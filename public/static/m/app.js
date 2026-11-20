@@ -230,7 +230,7 @@
   // ====================================================================== data
   var D = null;          // everything from /api/home
   var TYPE_NAMES = {};
-  var APP_NAME = { balance_transfer: "Lower my rate", fresh_loan: "New loan", payoff_help: "Close faster", callback: "Call me", consolidation: "Consolidate loans" };
+  var APP_NAME = { balance_transfer: "Lower my rate", fresh_loan: "New loan", payoff_help: "Close faster", callback: "Call me", consolidation: "Consolidate loans", loan_review: "Loan review" };
 
   function typeName(t) { return TYPE_NAMES[t] || "Loan"; }
 
@@ -256,6 +256,7 @@
     if (r.kind === "balance_transfer" && d.loan) return typeName(d.loan.type) + " to " + ((d.offer && d.offer.bank) || "a cheaper bank");
     if (r.kind === "fresh_loan") return typeName(d.loan_type) + (d.amount_wanted ? " of " + d.amount_wanted : "");
     if (r.kind === "payoff_help" && d.plan) return inr(d.plan.extra) + " extra a month";
+    if (r.kind === "loan_review") return (d.loans || []).length + " loans sent to the Credwise team";
     if (r.kind === "consolidation" && d.consolidation) return d.consolidation.loans.length + " loans to " + ((d.offer && d.offer.bank) || "one loan");
     if (r.kind === "callback") return (d.call_time || "Any time") + (d.topic ? " · " + d.topic : "");
     return "";
@@ -273,6 +274,38 @@
 
   // one colour per loan in the total bar; card debt shows in amber
   var SEG = ["#087337", "#4fae78", "#0a4d29", "#8fd3a8", "#2f9a5c", "#b9e3c8"];
+  // high = worth moving; thresholds match the add-loan screen's warning
+  function rateHigh(type, rate) {
+    if (!rate) return false;
+    if (type === "credit_card") return rate >= 24;
+    if (type === "home") return rate >= 9.5;
+    return rate >= 13;
+  }
+  function loanCard(l, colour, share) {
+    var li = el("li", "loan-card");
+    var top = el("div", "lc-top");
+    var name = el("span", "lc-name");
+    var dot = el("i", "dot"); dot.style.background = colour; name.appendChild(dot);
+    name.appendChild(document.createTextNode(typeName(l.type)));
+    top.appendChild(name);
+    top.appendChild(el("span", "lc-amt", inr(l.outstanding)));
+    li.appendChild(top);
+    var lender = el("div", "lc-lender");
+    lender.appendChild(el("span", null, (l.lender || "Lender not given") + (share != null ? " · " + share + "% of your loans" : "")));
+    li.appendChild(lender);
+    var chips = el("div", "lc-chips");
+    var hi = rateHigh(l.type, l.rate);
+    var rate = el("span", "rate-pill" + (hi ? " is-high" : ""));
+    rate.appendChild(el("b", null, l.rate ? pct(l.rate) : "Rate?"));
+    rate.appendChild(el("span", null, hi ? "High rate" : "interest"));
+    chips.appendChild(rate);
+    var emi = el("span", "emi-pill");
+    emi.appendChild(el("b", null, l.emi ? inr(l.emi) : "—")); emi.appendChild(el("span", null, "EMI"));
+    chips.appendChild(emi);
+    li.appendChild(chips);
+    return li;
+  }
+
   function paintHome() {
     var ov = D.overview || { loans: [], count: 0 };
     var has = ov.count > 0, p = D.profile || {};
@@ -293,16 +326,9 @@
       segs.appendChild(sp);
     });
     var ul = $("h-loans"); ul.textContent = ""; ul.hidden = !has;
+    $("h-proceed-box").hidden = !has;
     ov.loans.slice().sort(function (a, b) { return b.outstanding - a.outstanding; }).forEach(function (l, i) {
-      var li = el("li");
-      var dot = el("i", "dot"); dot.style.background = l.type === "credit_card" ? "#e0a93b" : SEG[i % SEG.length];
-      li.appendChild(dot);
-      var left = el("span", "lr-name", typeName(l.type));
-      left.appendChild(el("span", "lr-meta", (l.lender || "Lender not given") + " · " + pct(l.rate) + " · EMI " + inr(l.emi)));
-      li.appendChild(left);
-      var amt = el("span", "lr-amt", inr(l.outstanding));
-      amt.appendChild(el("span", "lr-share", Math.round(100 * l.outstanding / (ov.total_outstanding || 1)) + "%"));
-      li.appendChild(amt);
+      var li = loanCard(l, l.type === "credit_card" ? "#e0a93b" : SEG[i % SEG.length], Math.round(100 * l.outstanding / (ov.total_outstanding || 1)));
       li.addEventListener("click", function () { openTab("account", "acc-loans"); });
       ul.appendChild(li);
     });
@@ -376,6 +402,7 @@
   function refreshHome() { return loadHome().catch(function (e) { toast(e.message); }); }
 
   var ACT_ICONS = {
+    loan_review: '<path d="M7 3.5h7l4 4V20a.5.5 0 01-.5.5h-10.5A.5.5 0 016.5 20V4a.5.5 0 01.5-.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.5 13.5l2 2 3.5-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
     consolidation: '<path d="M4 6h5l5 6M4 18h5l5-6h6M17 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
     balance_transfer: '<path d="M5 9h12l-3-3M19 15H7l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
     fresh_loan: '<rect x="4" y="7" width="16" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10v5M9.5 12.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
@@ -514,6 +541,7 @@
     payoff_help: [["Our executive calls you", "Within one working day"], ["Your plan, step by step", "Which loan to prepay, and when"],
                   ["Monthly check-ins", "We remind you and track progress"]],
     callback: [["Our executive calls you", "At the time you picked"]],
+    loan_review: [["Our executive calls you", "Within one working day"], ["Your best option, explained", "Which loans to move, and to which bank"]],
     consolidation: [["Our executive calls you", "Within one working day"], ["Documents collected", "Statements for each loan you're merging"],
                     ["Bank approval", "Usually 3 to 7 working days"], ["Old loans paid off", "You start paying one EMI"]]
   };
@@ -522,6 +550,7 @@
     fresh_loan: ["A Credwise executive will be in touch within one working day", "They compare banks and apply for you", "No charge to you for our help"],
     payoff_help: ["A Credwise executive will be in touch within one working day", "They help you follow the plan, month by month", "No charge to you for our help"],
     callback: ["A Credwise executive will call you at the time you picked", "No charge to you for our help"],
+    loan_review: ["A Credwise executive will look at your loans and call you within one working day", "No charge to you for our help"],
     consolidation: ["A Credwise executive will be in touch within one working day", "The new bank pays off each old loan directly", "No charge to you for our help"]
   };
   // how far along the tracker is, from the status you set in admin
@@ -1021,12 +1050,24 @@
     api("POST", "/api/loans", { type: add.type, lender: add.lender, outstanding: P, rate: R, emi: E || "" })
       .then(loadHome).then(function () {
         backHome();
-        var card = $("loans-card"); window.scrollTo(0, card.getBoundingClientRect().top + window.scrollY - 70);
+        var card = $("loans-card"); window.scrollTo(0, card.getBoundingClientRect().top + window.scrollY - 20);
         var last = $("h-loans").lastChild; if (last) { last.classList.add("just-added"); setTimeout(function () { last.classList.remove("just-added"); }, 1600); }
       })
       .catch(function (err) { $("add-err").textContent = err.message; }).finally(function () { busy(btn, false); });
   });
   $("add-loan").addEventListener("click", openAddType);
+  $("h-add-more").addEventListener("click", openAddType);
+  $("h-proceed").addEventListener("click", function () {
+    var btn = this, phone = (D.profile && D.profile.phone) || "";
+    busy(btn, true);
+    api("POST", "/api/requests", { kind: "loan_review", phone: phone })
+      .then(function (r) {
+        toast(r.existing ? "The Credwise team already has your loans. They'll call you soon." : "Sent to the Credwise team. They'll call you within one working day.");
+        return loadHome();
+      })
+      .catch(function (err) { toast(err.message); })
+      .finally(function () { busy(btn, false); openBanks(false); });
+  });
   $("add-cibil").addEventListener("click", openScore);
 
   // ============================================================ Ask Ritu
@@ -1163,18 +1204,16 @@
     var ul = $("acc-loan-list"); ul.textContent = "";
     var loans = (D.overview && D.overview.loans) || [];
     if (!loans.length) ul.appendChild(el("li", "empty", "No loans yet. Add one, or upload your CIBIL report."));
-    loans.forEach(function (l) {
-      var li = el("li");
-      var left = el("span", "ml-name", typeName(l.type)); left.appendChild(el("span", "ml-meta", (l.lender || "Lender not given") + " · " + pct(l.rate) + " · EMI " + inr(l.emi)));
-      li.appendChild(left);
-      var right = el("span", "ml-right"); right.appendChild(el("span", "ml-amt", inr(l.outstanding)));
-      var del = el("button", "del"); del.type = "button"; del.setAttribute("aria-label", "Remove " + typeName(l.type));
-      del.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+    loans.forEach(function (l, i) {
+      var li = loanCard(l, l.type === "credit_card" ? "#e0a93b" : SEG[i % SEG.length], null);
+      var del = el("button", "lc-del"); del.type = "button"; del.textContent = "Remove";
+      del.setAttribute("aria-label", "Remove " + typeName(l.type) + (l.lender ? " with " + l.lender : ""));
       del.addEventListener("click", function () {
         if (!confirm("Remove your " + typeName(l.type).toLowerCase() + (l.lender ? " with " + l.lender : "") + "?")) return;
         api("DELETE", "/api/loans/" + encodeURIComponent(l.id)).then(loadHome).then(renderAccount).catch(function (err) { toast(err.message); });
       });
-      right.appendChild(del); li.appendChild(right); ul.appendChild(li);
+      li.querySelector(".lc-lender").appendChild(del);
+      ul.appendChild(li);
     });
   }
   $("me-f-salary").addEventListener("input", function () { var v = Number(this.value.replace(/\D/g, "")); this.value = v ? fmt.format(v) : ""; });
