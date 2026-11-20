@@ -99,7 +99,7 @@ def privacy():
 SERVICE_WORKER = r"""// Credwise service worker: lets the app install on phones and open its shell
 // offline. Pages and API calls always go to the network first, so customers
 // never see stale loan numbers.
-var CACHE = "credwise-v3";
+var CACHE = "credwise-v4";
 var SHELL = ["/static/m/app.css", "/static/m/app.js", "/static/m/admin.js", "/static/m/icons/icon-192.png"];
 
 self.addEventListener("install", function (e) {
