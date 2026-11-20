@@ -407,7 +407,12 @@ def new_request():
     phone = "".join(ch for ch in str(data.get("phone") or "") if ch.isdigit() or ch == "+")
     if len(phone.lstrip("+")) < 10:
         return jsonify({"error": "Add a phone number so the Credwise team can call you."}), 400
-    if len(store.list_requests(uid)) >= 50:
+    mine = store.list_requests(uid)
+    if kind == "loan_review":
+        open_one = next((r for r in mine if r.get("kind") == "loan_review" and r.get("status") in ("new", "contacted", "in_progress")), None)
+        if open_one:  # already with the team; don't create duplicates on every Proceed
+            return jsonify({"ok": True, "id": open_one["id"], "existing": True})
+    if len(mine) >= 50:
         return jsonify({"error": "You have too many open requests. The team will get back to you."}), 429
     if limits.over_daily(store, uid, "request"):
         return jsonify({"error": limits.MESSAGES["request"]}), 429
@@ -454,12 +459,20 @@ def new_request():
             return jsonify({"error": result["reason"] or "Pick the loans you want to merge."}), 400
         chosen = next((o for o in result["options"] if o["bank_id"] == data.get("bank_id")), result["options"][0])
         details.update(consolidation={k: v for k, v in result.items() if k != "options"}, offer=chosen)
+    if kind == "loan_review":
+        if not loans:
+            return jsonify({"error": "Add your loans first."}), 400
+        details.update(best_banks=[{k: b.get(k) for k in ("bank", "best_rate", "emi_now", "emi_new", "emi_saving", "net_saving")}
+                                   for b in L.best_banks(loans, bank_offers, profile)[:3]],
+                       cibil_score=profile.get("cibil_score"))
     if kind == "callback":
         details.update(call_time=str(data.get("call_time") or "")[:60], topic=str(data.get("topic") or "")[:60])
     req_id = store.create_request(uid, kind, details)
     what = {"balance_transfer": lambda: f"{L.LOAN_TYPES.get(details['loan']['type'])} → {(details.get('offer') or {}).get('bank', 'best offer')}",
             "fresh_loan": lambda: f"{L.LOAN_TYPES.get(details['loan_type'])}, {details.get('amount_wanted') or 'amount not given'}",
             "payoff_help": lambda: f"Extra {L.inr(float(data.get('extra') or 0))} a month",
+            "loan_review": lambda: f"{len(loans)} loans, {L.inr(details['overview'].get('total_outstanding') or 0)}"
+                                   + (f" · best saving {L.inr(details['best_banks'][0]['net_saving'])} with {details['best_banks'][0]['bank']}" if details.get('best_banks') else ""),
             "callback": lambda: f"{details.get('call_time') or 'any time'} · {details.get('topic') or ''}".strip(" ·"),
             "consolidation": lambda: f"{len(details['consolidation']['loans'])} loans ({L.inr(details['consolidation']['principal'])}) → {details['offer']['bank']} at {details['offer']['rate']}%"}
     try:

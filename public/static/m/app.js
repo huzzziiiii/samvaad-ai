@@ -230,7 +230,7 @@
   // ====================================================================== data
   var D = null;          // everything from /api/home
   var TYPE_NAMES = {};
-  var APP_NAME = { balance_transfer: "Lower my rate", fresh_loan: "New loan", payoff_help: "Close faster", callback: "Call me", consolidation: "Consolidate loans" };
+  var APP_NAME = { balance_transfer: "Lower my rate", fresh_loan: "New loan", payoff_help: "Close faster", callback: "Call me", consolidation: "Consolidate loans", loan_review: "Loan review" };
 
   function typeName(t) { return TYPE_NAMES[t] || "Loan"; }
 
@@ -256,6 +256,7 @@
     if (r.kind === "balance_transfer" && d.loan) return typeName(d.loan.type) + " to " + ((d.offer && d.offer.bank) || "a cheaper bank");
     if (r.kind === "fresh_loan") return typeName(d.loan_type) + (d.amount_wanted ? " of " + d.amount_wanted : "");
     if (r.kind === "payoff_help" && d.plan) return inr(d.plan.extra) + " extra a month";
+    if (r.kind === "loan_review") return (d.loans || []).length + " loans sent to the Credwise team";
     if (r.kind === "consolidation" && d.consolidation) return d.consolidation.loans.length + " loans to " + ((d.offer && d.offer.bank) || "one loan");
     if (r.kind === "callback") return (d.call_time || "Any time") + (d.topic ? " · " + d.topic : "");
     return "";
@@ -401,6 +402,7 @@
   function refreshHome() { return loadHome().catch(function (e) { toast(e.message); }); }
 
   var ACT_ICONS = {
+    loan_review: '<path d="M7 3.5h7l4 4V20a.5.5 0 01-.5.5h-10.5A.5.5 0 016.5 20V4a.5.5 0 01.5-.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.5 13.5l2 2 3.5-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
     consolidation: '<path d="M4 6h5l5 6M4 18h5l5-6h6M17 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
     balance_transfer: '<path d="M5 9h12l-3-3M19 15H7l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
     fresh_loan: '<rect x="4" y="7" width="16" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10v5M9.5 12.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
@@ -539,6 +541,7 @@
     payoff_help: [["Our executive calls you", "Within one working day"], ["Your plan, step by step", "Which loan to prepay, and when"],
                   ["Monthly check-ins", "We remind you and track progress"]],
     callback: [["Our executive calls you", "At the time you picked"]],
+    loan_review: [["Our executive calls you", "Within one working day"], ["Your best option, explained", "Which loans to move, and to which bank"]],
     consolidation: [["Our executive calls you", "Within one working day"], ["Documents collected", "Statements for each loan you're merging"],
                     ["Bank approval", "Usually 3 to 7 working days"], ["Old loans paid off", "You start paying one EMI"]]
   };
@@ -547,6 +550,7 @@
     fresh_loan: ["A Credwise executive will be in touch within one working day", "They compare banks and apply for you", "No charge to you for our help"],
     payoff_help: ["A Credwise executive will be in touch within one working day", "They help you follow the plan, month by month", "No charge to you for our help"],
     callback: ["A Credwise executive will call you at the time you picked", "No charge to you for our help"],
+    loan_review: ["A Credwise executive will look at your loans and call you within one working day", "No charge to you for our help"],
     consolidation: ["A Credwise executive will be in touch within one working day", "The new bank pays off each old loan directly", "No charge to you for our help"]
   };
   // how far along the tracker is, from the status you set in admin
@@ -1053,7 +1057,17 @@
   });
   $("add-loan").addEventListener("click", openAddType);
   $("h-add-more").addEventListener("click", openAddType);
-  $("h-proceed").addEventListener("click", function () { openBanks(false); });
+  $("h-proceed").addEventListener("click", function () {
+    var btn = this, phone = (D.profile && D.profile.phone) || "";
+    busy(btn, true);
+    api("POST", "/api/requests", { kind: "loan_review", phone: phone })
+      .then(function (r) {
+        toast(r.existing ? "The Credwise team already has your loans. They'll call you soon." : "Sent to the Credwise team. They'll call you within one working day.");
+        return loadHome();
+      })
+      .catch(function (err) { toast(err.message); })
+      .finally(function () { busy(btn, false); openBanks(false); });
+  });
   $("add-cibil").addEventListener("click", openScore);
 
   // ============================================================ Ask Ritu

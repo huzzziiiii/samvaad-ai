@@ -12,7 +12,7 @@
   var seenFeed = "", seenReq = "", latest = "", poller = null;
   var STATUS_LABEL = { "new": "New", contacted: "Contacted", in_progress: "In progress", done: "Done", closed: "Closed" };
   var STATUS_PILL = { "new": "new", contacted: "progress", in_progress: "progress", done: "done", closed: "" };
-  var KIND_NAME = { balance_transfer: "Lower my rate", fresh_loan: "New loan", payoff_help: "Close faster", callback: "Call me", consolidation: "Consolidate loans" };
+  var KIND_NAME = { balance_transfer: "Lower my rate", fresh_loan: "New loan", payoff_help: "Close faster", callback: "Call me", consolidation: "Consolidate loans", loan_review: "Review my loans" };
   var EV_ICON = { signed_up: "★", signed_in: "→", details: "✎", loan_added: "+", loan_updated: "✎", loan_removed: "−",
                   cibil_score: "◔", cibil_report: "▤", ritu: "?", request: "!" };
   var FEED_GROUPS = [["all", "All", null], ["request", "Requests", ["request"]], ["loans", "Loans", ["loan_added", "loan_updated", "loan_removed"]],
@@ -73,6 +73,10 @@
     }
     if (r.kind === "payoff_help" && d.plan) return "Extra " + inr(d.plan.extra) + "/month · saves " + inr(d.plan.interest_saved) + ", " + d.plan.months_saved + " months sooner";
     if (r.kind === "callback") return [d.call_time, d.topic].filter(Boolean).join(" · ");
+    if (r.kind === "loan_review") {
+      var lr = d.loans || [], bb = (d.best_banks || [])[0];
+      return lr.length + " loan" + (lr.length === 1 ? "" : "s") + " · " + inr((d.overview || {}).total_outstanding || 0) + (bb ? " · " + bb.bank + " saves " + inr(bb.net_saving) : " · no cheaper bank yet");
+    }
     if (r.kind === "consolidation" && d.consolidation && d.offer) return "Merge " + d.consolidation.loans.length + " loans (" + inr(d.consolidation.principal) + ") → " + d.offer.bank + " at " + pct(d.offer.rate) + " · saves " + inr(d.offer.net_saving);
     return "";
   }
@@ -146,6 +150,16 @@
       row("Extra each month", inr(d.plan.extra)); row("Months sooner", d.plan.months_saved); row("Interest saved", inr(d.plan.interest_saved), true);
     } else if (r.kind === "callback") {
       row("Call", d.call_time || "Any time"); row("About", d.topic);
+    } else if (r.kind === "loan_review") {
+      (d.loans || []).forEach(function (x) {
+        row(typeName(x.type) + (x.lender ? " · " + x.lender : ""), inr(x.outstanding) + " at " + pct(x.rate) + ", EMI " + inr(x.emi));
+      });
+      if (d.overview) row("Total", inr(d.overview.total_outstanding) + " · EMI " + inr(d.overview.total_emi) + "/month");
+      if (d.cibil_score) row("CIBIL", d.cibil_score);
+      (d.best_banks || []).forEach(function (b, i) {
+        row(i ? "Also" : "Best bank", b.bank + " from " + pct(b.best_rate) + ", EMI " + inr(b.emi_now) + " → " + inr(b.emi_new) + ", saves " + inr(b.net_saving), !i);
+      });
+      if (!(d.best_banks || []).length) row("Best bank", "None cheaper right now");
     } else if (r.kind === "consolidation" && d.consolidation && d.offer) {
       var c = d.consolidation;
       row("Loans to merge", c.loans.map(function (x) { return typeName(x.type) + (x.lender ? " (" + x.lender + ")" : "") + " " + inr(x.outstanding) + " at " + pct(x.rate); }).join("; "));
