@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Delete your account | Credwise</title>
+  <link rel="icon" href="{{ url_for('static', filename='m/icons/icon-192.png') }}" type="image/png">
+  <style>
+    body { margin: 0; background: #fff; color: #0b0b0c; font: 16px/1.6 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    header { position: sticky; top: 0; display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: #fff; border-bottom: 1px solid #e4e4e8; }
+    header a, a { color: #087337; }
+    header a { font-weight: 700; text-decoration: none; }
+    header .brand { font-size: 20px; letter-spacing: -0.02em; }
+    header .back { margin-left: auto; font-size: 15px; }
+    article { max-width: 680px; margin: 0 auto; padding: 8px 20px 48px; }
+    h1 { font-size: 26px; line-height: 1.25; margin: 22px 0 6px; }
+    h2 { font-size: 18px; margin: 26px 0 6px; color: #087337; }
+    p, li { margin: 0 0 10px; }
+  </style>
+</head>
+<body>
+  <header><a class="brand" href="/app"><img src="{{ url_for('static', filename='m/logo.svg') }}" alt="" width="26" height="26" style="vertical-align:-6px;margin-right:6px">credwise</a><a class="back" href="/app">Open the app</a></header>
+<article>
+  <h1>Delete your Credwise account</h1>
+  <p>You can delete your account and all your data yourself, at any time, from inside the app.</p>
+
+  <h2>In the app</h2>
+  <ol>
+    <li>Open Credwise and sign in.</li>
+    <li>Go to the Account tab.</li>
+    <li>Tap "Delete my account", type DELETE and confirm.</li>
+  </ol>
+
+  <h2>Without the app</h2>
+  <p>{% if legal.support_email %}Email <a href="mailto:{{ legal.support_email }}?subject=Delete%20my%20Credwise%20account">{{ legal.support_email }}</a>{% endif %}{% if legal.support_email and legal.support_phone %} or call {% elif legal.support_phone %}Call {% endif %}{% if legal.support_phone %}<a href="tel:+{{ legal.support_phone }}">+{{ legal.support_phone }}</a>{% endif %} from the phone number or email on your account and ask us to delete it. We delete it within 7 working days and confirm when it's done.</p>
+
+  <h2>What gets deleted</h2>
+  <p>Your name, phone number, email, age, salary and company; all your loans; your requests and activity history; your CIBIL score and report; and your sign-in. Deletion is immediate and can't be undone.</p>
+
+  <h2>What we may keep</h2>
+  <p>If a bank has already given you a loan through Credwise, the bank keeps its own records under its own policies. Credwise doesn't keep a copy of your data after you delete your account.</p>
+</article>
+</body>
+</html>

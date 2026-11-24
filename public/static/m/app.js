@@ -390,11 +390,12 @@
       : !/^[6-9]\d{9}$/.test(ph) ? ["dt-phone", "Enter your 10-digit mobile number."]
       : !(age >= 18 && age <= 75) ? ["dt-age", "Enter your age, between 18 and 75."]
       : !(salary >= 5000) ? ["dt-salary", "Enter your monthly take-home salary, e.g. 85,000."]
-      : !company ? ["dt-company", "Enter the company you work for."] : null;
+      : !company ? ["dt-company", "Enter the company you work for."]
+      : !$("dt-consent").checked ? ["dt-consent", "Tick the box to agree to the privacy policy."] : null;
     if (bad) { $("dt-err").textContent = bad[1]; $(bad[0]).focus(); return; }
     $("dt-err").textContent = "";
     var btn = $("dt-btn"); busy(btn, true);
-    api("PUT", "/api/me", { name: name.slice(0, 60), phone: ph, age: age, salary: salary, employer: company.slice(0, 60) })
+    api("PUT", "/api/me", { name: name.slice(0, 60), phone: ph, age: age, salary: salary, employer: company.slice(0, 60), consent: true })
       .then(loadHome).then(landing)
       .catch(function (err) { $("dt-err").textContent = err.message; }).finally(function () { busy(btn, false); });
   });
@@ -829,6 +830,7 @@
   $("sc-file").addEventListener("change", function () {
     var f = this.files && this.files[0];
     if (!f) return;
+    if (!$("sc-consent").checked) { $("sc-err").textContent = "Tick the box first so we can read your report."; resetUpload(); $("sc-consent").focus(); return; }
     if (!/\.pdf$/i.test(f.name) && f.type !== "application/pdf") { $("sc-err").textContent = "Choose the PDF report from CIBIL."; resetUpload(); return; }
     if (f.size > 4 * 1024 * 1024) { $("sc-err").textContent = "That file is over 4 MB. Download the report again from CIBIL as a PDF."; resetUpload(); return; }
     $("sc-err").textContent = ""; $("sc-msg").textContent = "";
@@ -849,7 +851,7 @@
     show("screen-read"); window.scrollTo(0, 0);
     var timers = [];
     items.forEach(function (li, i) { if (i < items.length - 1) timers.push(setTimeout(function () { li.className = "done"; }, 500 + i * 900)); });
-    var fd = new FormData(); fd.append("report", file, file.name || "cibil.pdf");
+    var fd = new FormData(); fd.append("report", file, file.name || "cibil.pdf"); fd.append("consent", "yes");
     if (password) fd.append("password", password);
     var started = Date.now();
     api("POST", "/api/cibil/report", fd).then(function (d) {
@@ -1235,6 +1237,47 @@
   });
   $("acc-add").addEventListener("click", openAddType);
   $("acc-cibil").addEventListener("click", openScore);
+
+  // ---- help and legal
+  var legal = null;
+  function loadLegal() {
+    if (legal) return Promise.resolve(legal);
+    return api("GET", "/api/legal").then(function (d) { legal = d; return d; });
+  }
+  $("acc-partners").addEventListener("click", function () {
+    show("screen-partners"); window.scrollTo(0, 0);
+    var ul = $("pt-list"); ul.textContent = "";
+    loadLegal().then(function (d) {
+      if (!d.partners.length) { ul.appendChild(el("li", "empty", "Our partner list is being updated. Call us to ask about a specific bank.")); return; }
+      d.partners.forEach(function (n) {
+        var li = el("li"); var m = el("span", "lender-mark", n.charAt(0)); li.appendChild(m); li.appendChild(el("span", null, n)); ul.appendChild(li);
+      });
+    }).catch(function (err) { toast(err.message); });
+  });
+  $("acc-grievance").addEventListener("click", function () {
+    show("screen-grievance"); window.scrollTo(0, 0);
+    var box = $("gr-card"); box.textContent = "";
+    loadLegal().then(function (d) {
+      var g = d.legal;
+      if (g.grievance_name) box.appendChild(el("p", "lg-name", g.grievance_name));
+      box.appendChild(el("p", "lg-role", "Grievance officer, " + g.company));
+      if (g.grievance_email) { var a = el("a", "lg-line", g.grievance_email); a.href = "mailto:" + g.grievance_email + "?subject=Complaint"; box.appendChild(a); }
+      if (g.grievance_phone) { var t = el("a", "lg-line", "+" + g.grievance_phone); t.href = "tel:+" + g.grievance_phone; box.appendChild(t); }
+      if (g.address) box.appendChild(el("p", "lg-addr", g.address));
+      if (!g.grievance_email && !g.grievance_phone) box.appendChild(el("p", "lg-addr", "Call Credwise support and ask for the grievance officer."));
+    }).catch(function (err) { toast(err.message); });
+  });
+  $("acc-delete").addEventListener("click", function () {
+    $("del-confirm").value = ""; $("del-err").textContent = ""; $("del-go").disabled = true;
+    show("screen-delete"); window.scrollTo(0, 0);
+  });
+  $("del-confirm").addEventListener("input", function () { $("del-go").disabled = this.value.trim().toUpperCase() !== "DELETE"; });
+  $("del-go").addEventListener("click", function () {
+    var btn = this; busy(btn, true); $("del-err").textContent = "";
+    api("DELETE", "/api/me", { confirm: "DELETE" })
+      .then(function () { toast("Your account and data are deleted."); setTimeout(function () { location.href = "/app"; }, 1200); })
+      .catch(function (err) { $("del-err").textContent = err.message; busy(btn, false); });
+  });
   $("svc-cibil").addEventListener("click", openScore);
   $("svc-add").addEventListener("click", openAddType);
   $("svc-ritu").addEventListener("click", openRitu);

@@ -16,11 +16,12 @@
     h2 { font-size: 18px; margin: 26px 0 6px; color: #087337; }
     p { margin: 0 0 10px; }
     .prose-lede { color: #5e5e66; }
+    a { color: #087337; }
     .fine { margin-top: 26px; font-size: 13.5px; color: #5e5e66; }
   </style>
 </head>
 <body>
-  <header><a class="brand" href="/app">credwise</a><a class="back" href="/app">Back to the app</a></header>
+  <header><a class="brand" href="/app"><img src="{{ url_for('static', filename='m/logo.svg') }}" alt="" width="26" height="26" style="vertical-align:-6px;margin-right:6px">credwise</a><a class="back" href="/app">Back to the app</a></header>
 <article>
   <h1>How Credwise uses your data</h1>
   <p class="prose-lede">In plain words. If anything here is unclear, ask us before you add your loans.</p>
@@ -43,8 +44,24 @@
   <h2>How Credwise is paid</h2>
   <p>You never pay Credwise. When a loan or balance transfer you choose is approved, the bank pays Credwise a fee. The savings we show are calculated the same way for every lender, after fees.</p>
 
-  <h2>Your choices</h2>
-  <p>You can edit or remove any loan at any time from the Account tab. To delete your account and everything in it, email us and we'll remove it.</p>
+  <h2>Your consent</h2>
+  <p>We ask for your agreement before you start, and again before you upload a CIBIL report. We record when you agreed. You can withdraw it at any time by deleting your account.</p>
+
+  <h2>Your rights and choices</h2>
+  <p>You can see and edit your details and loans at any time in the Account tab, and remove any loan. You can delete your account and all your data yourself from Account, then "Delete my account". This removes your details, loans, requests, activity and CIBIL report, and your sign-in. <a href="/delete-account">How to delete your account</a>.</p>
+
+  <h2>Banks and NBFCs we work with</h2>
+  {% if partners %}
+  <p>Credwise is not a lender. Loans are given only by banks and NBFCs regulated by the Reserve Bank of India, who decide approval, rates and fees. We work with: {{ partners | join(", ") }}.</p>
+  {% else %}
+  <p>Credwise is not a lender. Loans are given only by banks and NBFCs regulated by the Reserve Bank of India, who decide approval, rates and fees.</p>
+  {% endif %}
+
+  <h2>Grievance officer</h2>
+  <p>If you have a complaint about Credwise or how your data is handled, contact our grievance officer{% if legal.grievance_name %}, {{ legal.grievance_name }}{% endif %}{% if legal.grievance_email %}, at <a href="mailto:{{ legal.grievance_email }}">{{ legal.grievance_email }}</a>{% endif %}{% if legal.grievance_phone %}{% if legal.grievance_email %} or{% else %} on{% endif %} <a href="tel:+{{ legal.grievance_phone }}">+{{ legal.grievance_phone }}</a>{% endif %}. We reply within 7 working days. If a complaint is about a loan, you can also contact the bank or NBFC that gave it.</p>
+
+  <h2>Contact</h2>
+  <p>{{ legal.company }}{% if legal.address %}, {{ legal.address }}{% endif %}{% if legal.support_email %}. Email <a href="mailto:{{ legal.support_email }}">{{ legal.support_email }}</a>{% endif %}{% if legal.support_phone %}. Call <a href="tel:+{{ legal.support_phone }}">+{{ legal.support_phone }}</a>{% endif %}.</p>
 
   <p class="fine">Figures in Credwise are estimates based on what you enter and the lender rates we have on file. Final rates, fees and approval are decided by the bank.</p>
 </article>

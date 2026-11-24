@@ -8,6 +8,7 @@ Two backends with the same methods:
 get_store() picks Supabase when SUPABASE_URL and SUPABASE_SERVICE_KEY are set.
 """
 import os
+import shutil
 import json
 import uuid
 import sqlite3
@@ -278,6 +279,12 @@ class SQLiteStore:
                           "where cibil_report is not null and cibil_report != '' "
                           "and cibil_report_at < ?", (before,))
 
+    def delete_user(self, user_id):
+        """Erase everything held for one customer (DPDP / Play account deletion)."""
+        for table in ("loans", "requests", "events", "profiles"):
+            self._exec(f"delete from {table} where user_id=?", (user_id,))
+        shutil.rmtree(os.path.join(WRITE_DATA, "reports", user_id), ignore_errors=True)
+
     def count_events(self, user_id, kind, since):
         return self._rows("select count(*) as n from events where user_id=? and kind=? and created_at>=?",
                           (user_id, kind, since))[0]["n"]
@@ -487,6 +494,17 @@ class SupabaseStore:
             "cibil_report": "not.is.null",
             "cibil_report_at": f"lt.{before}",
             "limit": "500"})
+
+    def delete_user(self, user_id):
+        """Erase everything held for one customer (DPDP / Play account deletion)."""
+        for table in ("loans", "requests", "events", "profiles"):
+            self._req("DELETE", table, {"user_id": f"eq.{user_id}"})
+        # the sign-in account itself
+        headers = dict(self.headers)
+        r = requests.delete(self.base.replace("/rest/v1", f"/auth/v1/admin/users/{user_id}"), headers=headers, timeout=15)
+        if r.status_code >= 400 and r.status_code != 404:
+            # data is already gone; a leftover sign-in holds only the email, so log it for the team
+            print(f"[delete_user] sign-in account {user_id} not removed ({r.status_code}): {r.text[:200]}")
 
     def count_events(self, user_id, kind, since):
         return self._count("events", {"user_id": f"eq.{user_id}", "kind": f"eq.{kind}", "created_at": f"gte.{since}"})

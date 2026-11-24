@@ -938,3 +938,27 @@ body { font-family: "Onest", -apple-system, "Segoe UI", Roboto, "Helvetica Neue"
 /* Credwise logo beside the wordmark */
 .brand { display: inline-flex; align-items: center; gap: 8px; }
 .brand-logo { width: 30px; height: 30px; object-fit: contain; flex: none; }
+
+/* =====================================================================
+   v5: consent, help and legal, account deletion
+   ===================================================================== */
+.consent { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; margin: 18px 0 4px; font-size: 14px; line-height: 1.45; color: var(--ink-2); cursor: pointer; }
+.consent input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--brand); }
+.consent a { color: var(--brand); font-weight: 600; }
+.consent-small { margin: 12px 0 10px; font-size: 13.5px; }
+
+.partner-list { list-style: none; margin: 8px 0 0; padding: 0; border-top: 1px solid var(--line); }
+.partner-list li { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 12px; padding: 12px 2px; border-bottom: 1px solid var(--line); font-size: 15.5px; font-weight: 500; }
+.partner-list .empty { display: block; padding: 16px 2px; color: var(--ink-2); font-weight: 400; }
+
+.legal-card { margin-top: 8px; padding: 20px; border-radius: 18px; background: var(--tint); }
+.legal-card p { margin: 0; }
+.lg-name { font-family: var(--display); font-size: 20px; font-weight: 700; color: var(--forest); }
+.lg-role { margin-top: 2px !important; font-size: 14px; color: #3d5a48; }
+.lg-line { display: block; margin-top: 12px; font-size: 16px; font-weight: 600; color: var(--brand); text-decoration: none; }
+.lg-addr { margin-top: 12px !important; font-size: 14px; color: #3d5a48; }
+
+.del-list { margin: 4px 0 16px; padding-left: 20px; color: var(--ink); line-height: 1.7; }
+.btn-danger { margin-top: 14px; background: #b3261e; }
+.btn-danger:disabled { background: #e8b4b0; }
+.svc-danger b { color: #b3261e; }
