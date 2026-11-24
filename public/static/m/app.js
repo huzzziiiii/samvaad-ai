@@ -390,11 +390,12 @@
       : !/^[6-9]\d{9}$/.test(ph) ? ["dt-phone", "Enter your 10-digit mobile number."]
       : !(age >= 18 && age <= 75) ? ["dt-age", "Enter your age, between 18 and 75."]
       : !(salary >= 5000) ? ["dt-salary", "Enter your monthly take-home salary, e.g. 85,000."]
-      : !company ? ["dt-company", "Enter the company you work for."] : null;
+      : !company ? ["dt-company", "Enter the company you work for."]
+      : !$("dt-consent").checked ? ["dt-consent", "Tick the box to agree to the privacy policy."] : null;
     if (bad) { $("dt-err").textContent = bad[1]; $(bad[0]).focus(); return; }
     $("dt-err").textContent = "";
     var btn = $("dt-btn"); busy(btn, true);
-    api("PUT", "/api/me", { name: name.slice(0, 60), phone: ph, age: age, salary: salary, employer: company.slice(0, 60) })
+    api("PUT", "/api/me", { name: name.slice(0, 60), phone: ph, age: age, salary: salary, employer: company.slice(0, 60), consent: true })
       .then(loadHome).then(landing)
       .catch(function (err) { $("dt-err").textContent = err.message; }).finally(function () { busy(btn, false); });
   });
@@ -457,6 +458,38 @@
   var bt = { loan: null, offer: null };
   var LOAN_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3.5" y="6.5" width="17" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
   var CHEVRON = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  // Bank logos: each lender's own website icon, with the initials as a fallback.
+  var LENDER_SITES = [
+    ["state bank of india", "sbi.co.in"], ["sbi", "sbi.co.in"], ["union bank of india", "unionbankofindia.co.in"],
+    ["punjab national", "pnbindia.in"], ["pnb", "pnbindia.in"], ["bank of baroda", "bankofbaroda.in"],
+    ["bank of india", "bankofindia.co.in"], ["canara", "canarabank.com"], ["federal bank", "federalbank.co.in"],
+    ["hdb financial", "hdbfs.com"], ["hdfc", "hdfcbank.com"], ["icici", "icicibank.com"], ["idbi", "idbibank.in"],
+    ["idfc", "idfcfirstbank.com"], ["indusind", "indusind.com"], ["kotak", "kotak.com"], ["axis", "axisbank.com"],
+    ["yes bank", "yesbank.in"], ["aditya birla", "adityabirlacapital.com"], ["bajaj", "bajajfinserv.in"],
+    ["l&t", "ltfs.com"], ["lic housing", "lichousing.com"], ["manappuram", "manappuram.com"],
+    ["muthoot", "muthootfinance.com"], ["piramal", "piramalfinance.com"], ["poonawalla", "poonawallafincorp.com"],
+    ["tata capital", "tatacapital.com"], ["au small finance", "au.bank.in"], ["bandhan", "bandhanbank.com"],
+    ["rbl", "rblbank.com"], ["standard chartered", "sc.com"], ["hsbc", "hsbc.co.in"], ["dbs", "dbs.com"],
+    ["indian bank", "indianbank.in"], ["indian overseas", "iob.in"], ["central bank of india", "centralbankofindia.co.in"],
+    ["shriram", "shriramfinance.in"], ["cholamandalam", "cholamandalam.com"], ["mahindra finance", "mahindrafinance.com"],
+    ["fullerton", "smfgindiacredit.com"], ["smfg", "smfgindiacredit.com"], ["incred", "incred.com"]
+  ];
+  function lenderSite(name) {
+    var n = (name || "").toLowerCase(), best = null;
+    LENDER_SITES.forEach(function (p) { if (n.indexOf(p[0]) !== -1 && (!best || p[0].length > best[0].length)) best = p; });
+    return best && best[1];
+  }
+  function lenderMark(name, extraClass) {
+    var m = el("span", "lender-mark" + (extraClass ? " " + extraClass : ""), initials(name));
+    var site = lenderSite(name);
+    if (site) {
+      var img = new Image(); img.alt = ""; img.decoding = "async";
+      img.onload = function () { if (img.naturalWidth > 16) { m.textContent = ""; m.classList.add("has-logo"); m.appendChild(img); } };
+      img.src = "https://www.google.com/s2/favicons?sz=128&domain=" + site;
+    }
+    return m;
+  }
+
   function initials(name) { return (name || "?").replace(/\b(Bank|of|India|Finance|Financial|Services|Capital|Ltd|Limited)\b/gi, "").trim().split(/\s+/).slice(0, 2).map(function (w) { return w[0]; }).join("").toUpperCase() || name[0]; }
 
   function btLoans() {
@@ -829,6 +862,7 @@
   $("sc-file").addEventListener("change", function () {
     var f = this.files && this.files[0];
     if (!f) return;
+    if (!$("sc-consent").checked) { $("sc-err").textContent = "Tick the box first so we can read your report."; resetUpload(); $("sc-consent").focus(); return; }
     if (!/\.pdf$/i.test(f.name) && f.type !== "application/pdf") { $("sc-err").textContent = "Choose the PDF report from CIBIL."; resetUpload(); return; }
     if (f.size > 4 * 1024 * 1024) { $("sc-err").textContent = "That file is over 4 MB. Download the report again from CIBIL as a PDF."; resetUpload(); return; }
     $("sc-err").textContent = ""; $("sc-msg").textContent = "";
@@ -849,7 +883,7 @@
     show("screen-read"); window.scrollTo(0, 0);
     var timers = [];
     items.forEach(function (li, i) { if (i < items.length - 1) timers.push(setTimeout(function () { li.className = "done"; }, 500 + i * 900)); });
-    var fd = new FormData(); fd.append("report", file, file.name || "cibil.pdf");
+    var fd = new FormData(); fd.append("report", file, file.name || "cibil.pdf"); fd.append("consent", "yes");
     if (password) fd.append("password", password);
     var started = Date.now();
     api("POST", "/api/cibil/report", fd).then(function (d) {
@@ -986,7 +1020,7 @@
   function lenderRow(name, other) {
     var li = el("li");
     var b = el("button", "lender" + (other ? " lender-other" : "")); b.type = "button";
-    b.appendChild(el("span", "lender-mark", other ? "+" : initials(name)));
+    b.appendChild(other ? el("span", "lender-mark", "+") : lenderMark(name));
     b.appendChild(el("span", null, other ? 'Use "' + name + '"' : name));
     b.addEventListener("click", function () { add.lender = name; openAddDetails(); });
     li.appendChild(b); return li;
@@ -1235,6 +1269,47 @@
   });
   $("acc-add").addEventListener("click", openAddType);
   $("acc-cibil").addEventListener("click", openScore);
+
+  // ---- help and legal
+  var legal = null;
+  function loadLegal() {
+    if (legal) return Promise.resolve(legal);
+    return api("GET", "/api/legal").then(function (d) { legal = d; return d; });
+  }
+  $("acc-partners").addEventListener("click", function () {
+    show("screen-partners"); window.scrollTo(0, 0);
+    var ul = $("pt-list"); ul.textContent = "";
+    loadLegal().then(function (d) {
+      if (!d.partners.length) { ul.appendChild(el("li", "empty", "Our partner list is being updated. Call us to ask about a specific bank.")); return; }
+      d.partners.forEach(function (n) {
+        var li = el("li"); li.appendChild(lenderMark(n)); li.appendChild(el("span", null, n)); ul.appendChild(li);
+      });
+    }).catch(function (err) { toast(err.message); });
+  });
+  $("acc-grievance").addEventListener("click", function () {
+    show("screen-grievance"); window.scrollTo(0, 0);
+    var box = $("gr-card"); box.textContent = "";
+    loadLegal().then(function (d) {
+      var g = d.legal;
+      if (g.grievance_name) box.appendChild(el("p", "lg-name", g.grievance_name));
+      box.appendChild(el("p", "lg-role", "Grievance officer, " + g.company));
+      if (g.grievance_email) { var a = el("a", "lg-line", g.grievance_email); a.href = "mailto:" + g.grievance_email + "?subject=Complaint"; box.appendChild(a); }
+      if (g.grievance_phone) { var t = el("a", "lg-line", g.grievance_phone.length === 12 ? "+" + g.grievance_phone.slice(0, 2) + " " + g.grievance_phone.slice(2, 7) + " " + g.grievance_phone.slice(7) : "+" + g.grievance_phone); t.href = "tel:+" + g.grievance_phone; box.appendChild(t); }
+      if (g.address) box.appendChild(el("p", "lg-addr", g.address));
+      if (!g.grievance_email && !g.grievance_phone) box.appendChild(el("p", "lg-addr", "Call Credwise support and ask for the grievance officer."));
+    }).catch(function (err) { toast(err.message); });
+  });
+  $("acc-delete").addEventListener("click", function () {
+    $("del-confirm").value = ""; $("del-err").textContent = ""; $("del-go").disabled = true;
+    show("screen-delete"); window.scrollTo(0, 0);
+  });
+  $("del-confirm").addEventListener("input", function () { $("del-go").disabled = this.value.trim().toUpperCase() !== "DELETE"; });
+  $("del-go").addEventListener("click", function () {
+    var btn = this; busy(btn, true); $("del-err").textContent = "";
+    api("DELETE", "/api/me", { confirm: "DELETE" })
+      .then(function () { toast("Your account and data are deleted."); setTimeout(function () { location.href = "/app"; }, 1200); })
+      .catch(function (err) { $("del-err").textContent = err.message; busy(btn, false); });
+  });
   $("svc-cibil").addEventListener("click", openScore);
   $("svc-add").addEventListener("click", openAddType);
   $("svc-ritu").addEventListener("click", openRitu);
@@ -1288,7 +1363,7 @@
       if (!r.options.length) { $("cs-empty").hidden = false; $("cs-empty-text").textContent = r.reason; return; }
       r.options.forEach(function (o, i) {
         var li = el("li", "bk" + (i === 0 ? " bk-top" : ""));
-        var head = el("div", "bk-head"); head.appendChild(el("span", "lender-mark", initials(o.bank)));
+        var head = el("div", "bk-head"); head.appendChild(lenderMark(o.bank));
         var nm = el("div"); nm.appendChild(el("b", null, o.bank)); nm.appendChild(el("span", null, pct(o.rate) + " a year for " + monthsText(o.tenure_months)));
         head.appendChild(nm); if (i === 0) head.appendChild(el("span", "bk-badge", "Best for you"));
         li.appendChild(head);
@@ -1329,7 +1404,7 @@
     var ul = $("bl-list"); ul.textContent = "";
     g.banks.forEach(function (b) {
       var li = el("li");
-      li.appendChild(el("span", "lender-mark", initials(b.name)));
+      li.appendChild(lenderMark(b.name));
       var nm = el("span", "bl-name", b.name);
       nm.appendChild(el("span", "lr-meta", "Fee " + (b.fee_pct ? b.fee_pct + "%" : "nil") + (b.max_tenure_months ? " · up to " + monthsText(b.max_tenure_months) : "")));
       li.appendChild(nm);
@@ -1398,7 +1473,7 @@
     list.forEach(function (b, i) {
       var li = el("li", "bk" + (i === 0 ? " bk-top" : ""));
       var head = el("div", "bk-head");
-      head.appendChild(el("span", "lender-mark", initials(b.bank)));
+      head.appendChild(lenderMark(b.bank));
       var nm = el("div"); nm.appendChild(el("b", null, b.bank));
       nm.appendChild(el("span", null, "From " + pct(b.best_rate) + " a year"));
       head.appendChild(nm);
@@ -1451,7 +1526,7 @@
   // shared with the admin screens (admin.js)
   window.SV = {
     api: api, show: show, el: el, inr: inr, pct: pct, toast: toast, busy: busy, when: when, niceDate: niceDate,
-    monthsText: monthsText, band: band, initials: initials, typeName: typeName,
+    monthsText: monthsText, band: band, initials: initials, lenderMark: lenderMark, typeName: typeName,
     setHistory: function (h) { history_ = h; }, pushHistory: function (id) { history_.push(id); },
     data: function () { return D; }, signOut: signOut, openCall: openCall,
     customerView: function () { customerView(true); loadHome().then(function () { history_ = ["screen-home"]; openHome(); }); }

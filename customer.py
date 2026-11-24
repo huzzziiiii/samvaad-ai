@@ -88,9 +88,54 @@ def app_home():
     return resp
 
 
+def legal_info():
+    """Contact details shown on the privacy page and in the app. Set these in
+    Vercel's environment variables so Credwise can change them without code."""
+    digits = lambda v: "".join(ch for ch in (v or "") if ch.isdigit())
+    support_phone = digits(os.getenv("SUPPORT_PHONE"))
+    return {
+        "company": os.getenv("COMPANY_NAME", "Credwise"),
+        "address": os.getenv("COMPANY_ADDRESS", ""),
+        "support_email": os.getenv("SUPPORT_EMAIL", ""),
+        "support_phone": support_phone,
+        "grievance_name": os.getenv("GRIEVANCE_NAME", ""),
+        "grievance_email": os.getenv("GRIEVANCE_EMAIL", "") or os.getenv("SUPPORT_EMAIL", ""),
+        "grievance_phone": digits(os.getenv("GRIEVANCE_PHONE")) or support_phone,
+    }
+
+
+def phone_display(d):
+    return f"+{d[:2]} {d[2:7]} {d[7:]}" if d and len(d) == 12 else (f"+{d}" if d else "")
+
+
+bp.add_app_template_filter(phone_display, "phone")
+
+
+def partner_names(store):
+    """Banks and NBFCs Credwise works with: the active lenders in the bank list."""
+    try:
+        names = {b["name"].strip() for b in store.list_banks(active_only=True) if b.get("name")}
+    except Exception:
+        names = set()
+    return sorted(names, key=str.lower)
+
+
 @bp.route("/privacy")
 def privacy():
-    return render_template("privacy.html", active="privacy")
+    store = get_store()
+    return render_template("privacy.html", active="privacy", legal=legal_info(), partners=partner_names(store))
+
+
+@bp.route("/delete-account")
+def delete_account_page():
+    """Public page Google Play asks for: how to delete your account and data."""
+    return render_template("delete_account.html", legal=legal_info())
+
+
+@bp.route("/api/legal")
+def legal_api():
+    store = get_store()
+    return jsonify({"legal": legal_info(), "partners": partner_names(store)})
 
 
 # The service worker is kept in code: on Vercel, files in public/ are served by
@@ -208,6 +253,31 @@ def me():
     })
 
 
+@bp.route("/api/me", methods=["DELETE"])
+@auth.login_required
+def delete_me():
+    """Customer deletes their account and every piece of data we hold."""
+    store, err = store_or_error()
+    if err:
+        return err
+    data = request.get_json(silent=True) or {}
+    if data.get("confirm") != "DELETE":
+        return jsonify({"error": "Type DELETE to confirm."}), 400
+    uid = user_id()
+    report_path = (store.get_profile(uid) or {}).get("cibil_report")
+    if report_path:
+        try:
+            store.delete_report(report_path)
+        except Exception:
+            pass  # the nightly cleanup will catch a leftover file
+    try:
+        store.delete_user(uid)
+    except Exception:
+        return jsonify({"error": "Couldn't delete everything just now. Try again, or call us and we'll do it."}), 502
+    auth.sign_out()
+    return jsonify({"deleted": True})
+
+
 @bp.route("/api/me", methods=["PUT"])
 @auth.login_required
 def update_me():
@@ -215,6 +285,9 @@ def update_me():
     if err:
         return err
     data = request.get_json(silent=True) or {}
+    if data.get("consent") is True:
+        log(store, "consent", "Agreed to the privacy policy and to Credwise contacting them",
+            {"policy": "privacy-2026-11", "ip": request.headers.get("x-forwarded-for", request.remote_addr)})
     clean = {}
     for key in ("name", "phone", "employer", "city"):
         if key in data:
@@ -650,6 +723,8 @@ def upload_report():
     from core import report
     if limits.over_daily(store, user_id(), "cibil_report") or limits.too_fast("report:" + user_id(), 10, 600):
         return jsonify({"error": limits.MESSAGES["cibil_report"]}), 429
+    if request.form.get("consent") != "yes":
+        return jsonify({"error": "Tick the box to let Credwise read your report."}), 400
     f = request.files.get("report")
     if not f:
         return jsonify({"error": "Choose the PDF report from CIBIL."}), 400

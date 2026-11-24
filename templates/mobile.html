@@ -156,6 +156,11 @@
       <label class="field-label" for="dt-company">Company name</label>
       <div class="input-wrap"><input id="dt-company" type="text" autocomplete="organization" maxlength="60" placeholder="Where you work, e.g. Infosys"></div>
 
+      <label class="consent" for="dt-consent">
+        <input type="checkbox" id="dt-consent">
+        <span>I agree to the <a href="/privacy" target="_blank" rel="noopener">privacy policy</a>, and I allow Credwise and its partner banks and NBFCs to contact me about my loans.</span>
+      </label>
+
       <p class="err" id="dt-err" role="alert"></p>
       <button class="btn-main" type="submit" id="dt-btn">Continue</button>
       <button class="btn-link btn-link-quiet" type="button" id="dt-out">Not you? Sign out</button>
@@ -318,7 +323,14 @@
         <li id="acc-admin" hidden><button class="svc" type="button" id="acc-admin-go"><span class="svc-body"><b>Admin panel</b><span>Requests, customers and live activity</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
         <li><button class="svc" type="button" id="acc-cibil"><span class="svc-body"><b>CIBIL score</b><span id="acc-cibil-sub">Not added yet</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
         <li><button class="svc" type="button" data-call><span class="svc-body"><b>Help and support</b><span>Talk to a Credwise executive</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
-        <li><a class="svc" href="/privacy" id="acc-privacy"><span class="svc-body"><b>Privacy</b><span>How we keep your details safe</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+      </ul>
+
+      <h2 class="list-head">Help and legal</h2>
+      <ul class="svc-list menu">
+        <li><button class="svc" type="button" id="acc-partners"><span class="svc-body"><b>Banks and NBFCs we work with</b><span>Who actually gives the loans</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><button class="svc" type="button" id="acc-grievance"><span class="svc-body"><b>Grievance officer</b><span>Raise a complaint</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
+        <li><a class="svc" href="/privacy" id="acc-privacy"><span class="svc-body"><b>Privacy policy</b><span>How we use and protect your data</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+        <li><button class="svc svc-danger" type="button" id="acc-delete"><span class="svc-body"><b>Delete my account</b><span>Remove all your data from Credwise</span></span><svg class="pick-go" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>
       </ul>
 
       <button class="btn-signout" type="button" id="sign-out">Sign out</button>
@@ -507,6 +519,10 @@
       <li>
         <b>Add it to Credwise</b>
         <span>Upload the PDF so we can find you the right bank, or just type your score.</span>
+        <label class="consent consent-small" for="sc-consent">
+          <input type="checkbox" id="sc-consent">
+          <span>I allow Credwise to read my CIBIL report to find my loans and score. <a href="/privacy" target="_blank" rel="noopener">How we use it</a></span>
+        </label>
         <label class="btn-upload">
           <input type="file" id="sc-file" accept="application/pdf" hidden>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -649,6 +665,55 @@
       <span><b>Stuck on any step?</b><span>Call or WhatsApp your Credwise executive. We stay with you until your old loans are closed.</span></span>
     </div>
     <div class="dock"><button class="btn-main" type="button" data-call>Talk to your executive</button></div>
+  </main>
+
+  <!-- Banks and NBFCs Credwise works with -->
+  <main class="screen flow-screen" id="screen-partners" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">Our lending partners</span>
+    </header>
+    <h1 class="ask">Banks and NBFCs we work with</h1>
+    <p class="cs-sub">Credwise is not a lender. Loans are given only by these RBI-regulated banks and NBFCs, who decide approval, rate and fees.</p>
+    <ul class="partner-list" id="pt-list"></ul>
+  </main>
+
+  <!-- Grievance officer -->
+  <main class="screen flow-screen" id="screen-grievance" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">Grievance officer</span>
+    </header>
+    <h1 class="ask">Have a complaint?</h1>
+    <p class="cs-sub">Tell our grievance officer. We reply within 7 working days. For a problem with a loan itself, you can also contact the bank or NBFC that gave it.</p>
+    <div class="legal-card" id="gr-card"></div>
+  </main>
+
+  <!-- Delete account -->
+  <main class="screen flow-screen" id="screen-delete" data-screen hidden>
+    <header class="top bar-top">
+      <button class="back" type="button" data-back aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="top-title">Delete account</span>
+    </header>
+    <h1 class="ask">Delete your account?</h1>
+    <p class="cs-sub">This removes everything Credwise holds about you, straight away. It can't be undone.</p>
+    <ul class="del-list">
+      <li>Your name, phone, age, salary and company</li>
+      <li>All your loans and your CIBIL score and report</li>
+      <li>Your requests and activity history</li>
+      <li>Your sign-in</li>
+    </ul>
+    <p class="cs-sub">If a bank has already given you a loan through us, the bank keeps its own records.</p>
+    <label class="field-label" for="del-confirm">Type DELETE to confirm</label>
+    <div class="input-wrap"><input id="del-confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DELETE"></div>
+    <p class="err" id="del-err" role="alert"></p>
+    <button class="btn-main btn-danger" type="button" id="del-go" disabled>Delete my account</button>
   </main>
 
   <!-- Add a loan: 1 type -->

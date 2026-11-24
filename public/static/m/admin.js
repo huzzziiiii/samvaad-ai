@@ -392,7 +392,7 @@
       byType[t].forEach(function (b) {
         var li = el("li");
         var row = el("button", "ad-bank" + (b.active ? "" : " off") + (/^sample/i.test(b.name) ? " sample" : "")); row.type = "button";
-        row.appendChild(el("span", "lender-mark", SV.initials(b.name)));
+        row.appendChild(SV.lenderMark(b.name));
         var body = el("span", "ad-bank-body"); body.appendChild(el("b", null, b.name));
         body.appendChild(el("span", null, pct(b.rate_min) + (b.rate_max && b.rate_max !== b.rate_min ? " – " + pct(b.rate_max) : "") +
           " · fee " + pct(b.processing_fee_pct || 0) + (b.max_tenure_months ? " · up to " + b.max_tenure_months + " months" : "") + (b.active ? "" : " · hidden")));
