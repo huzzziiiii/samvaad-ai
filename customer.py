@@ -104,6 +104,13 @@ def legal_info():
     }
 
 
+def phone_display(d):
+    return f"+{d[:2]} {d[2:7]} {d[7:]}" if d and len(d) == 12 else (f"+{d}" if d else "")
+
+
+bp.add_app_template_filter(phone_display, "phone")
+
+
 def partner_names(store):
     """Banks and NBFCs Credwise works with: the active lenders in the bank list."""
     try:

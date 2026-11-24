@@ -32,7 +32,7 @@
   </ol>
 
   <h2>Without the app</h2>
-  <p>{% if legal.support_email %}Email <a href="mailto:{{ legal.support_email }}?subject=Delete%20my%20Credwise%20account">{{ legal.support_email }}</a>{% endif %}{% if legal.support_email and legal.support_phone %} or call {% elif legal.support_phone %}Call {% endif %}{% if legal.support_phone %}<a href="tel:+{{ legal.support_phone }}">+{{ legal.support_phone }}</a>{% endif %} from the phone number or email on your account and ask us to delete it. We delete it within 7 working days and confirm when it's done.</p>
+  <p>{% if legal.support_email %}Email <a href="mailto:{{ legal.support_email }}?subject=Delete%20my%20Credwise%20account">{{ legal.support_email }}</a>{% endif %}{% if legal.support_email and legal.support_phone %} or call {% elif legal.support_phone %}Call {% endif %}{% if legal.support_phone %}<a href="tel:+{{ legal.support_phone }}">{{ legal.support_phone | phone }}</a>{% endif %} from the phone number or email on your account and ask us to delete it. We delete it within 7 working days and confirm when it's done.</p>
 
   <h2>What gets deleted</h2>
   <p>Your name, phone number, email, age, salary and company; all your loans; your requests and activity history; your CIBIL score and report; and your sign-in. Deletion is immediate and can't be undone.</p>

@@ -58,10 +58,10 @@
   {% endif %}
 
   <h2>Grievance officer</h2>
-  <p>If you have a complaint about Credwise or how your data is handled, contact our grievance officer{% if legal.grievance_name %}, {{ legal.grievance_name }}{% endif %}{% if legal.grievance_email %}, at <a href="mailto:{{ legal.grievance_email }}">{{ legal.grievance_email }}</a>{% endif %}{% if legal.grievance_phone %}{% if legal.grievance_email %} or{% else %} on{% endif %} <a href="tel:+{{ legal.grievance_phone }}">+{{ legal.grievance_phone }}</a>{% endif %}. We reply within 7 working days. If a complaint is about a loan, you can also contact the bank or NBFC that gave it.</p>
+  <p>If you have a complaint about Credwise or how your data is handled, contact our grievance officer{% if legal.grievance_name %}, {{ legal.grievance_name }}{% endif %}{% if legal.grievance_email %}, at <a href="mailto:{{ legal.grievance_email }}">{{ legal.grievance_email }}</a>{% endif %}{% if legal.grievance_phone %}{% if legal.grievance_email %} or{% else %} on{% endif %} <a href="tel:+{{ legal.grievance_phone }}">{{ legal.grievance_phone | phone }}</a>{% endif %}. We reply within 7 working days. If a complaint is about a loan, you can also contact the bank or NBFC that gave it.</p>
 
   <h2>Contact</h2>
-  <p>{{ legal.company }}{% if legal.address %}, {{ legal.address }}{% endif %}{% if legal.support_email %}. Email <a href="mailto:{{ legal.support_email }}">{{ legal.support_email }}</a>{% endif %}{% if legal.support_phone %}. Call <a href="tel:+{{ legal.support_phone }}">+{{ legal.support_phone }}</a>{% endif %}.</p>
+  <p>{{ legal.company }}{% if legal.address %}, {{ legal.address }}{% endif %}{% if legal.support_email %}. Email <a href="mailto:{{ legal.support_email }}">{{ legal.support_email }}</a>{% endif %}{% if legal.support_phone %}. Call <a href="tel:+{{ legal.support_phone }}">{{ legal.support_phone | phone }}</a>{% endif %}.</p>
 
   <p class="fine">Figures in Credwise are estimates based on what you enter and the lender rates we have on file. Final rates, fees and approval are decided by the bank.</p>
 </article>
