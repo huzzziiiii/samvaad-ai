@@ -757,12 +757,18 @@ def upload_report():
         except Exception:
             pass
 
-    result, problem = None, None
+    result, problem, why = None, None, ""
     if report.enabled():
+        report.LAST_FAILURE["detail"] = ""
         try:
             result = report.read(readable)
         except report.ReportError as exc:
             problem = str(exc)
+            why = report.LAST_FAILURE["detail"] or problem
+        except Exception as exc:   # never lose the upload over a reading bug
+            problem = "Couldn't read your report just now. Try again in a minute, or type your score."
+            why = f"{type(exc).__name__}: {str(exc)[:200]}"
+            print("[report] unexpected:", why)
     else:
         problem = "Your report is saved and our executive will go through it. You can type your score now."
 
@@ -774,5 +780,6 @@ def upload_report():
     log(store, "cibil_report",
         (f"Score {result['score']} · " if result and result.get("score") else "") +
         (f"{n} open account{'s' if n != 1 else ''} found" if result else "Report saved, not read automatically"),
-        {"path": path, "score": (result or {}).get("score"), "accounts": (result or {}).get("accounts")})
+        {"path": path, "score": (result or {}).get("score"), "accounts": (result or {}).get("accounts"),
+         "problem": why or None})
     return jsonify({"saved": True, "result": result, "message": problem})
