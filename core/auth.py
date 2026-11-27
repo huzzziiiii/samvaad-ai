@@ -35,6 +35,9 @@ def public_config():
         "supabase_url": os.getenv("SUPABASE_URL", "") if mode() == "supabase" else "",
         "supabase_anon_key": os.getenv("SUPABASE_ANON_KEY", "") if mode() == "supabase" else "",
         "google": os.getenv("SUPABASE_GOOGLE_LOGIN") == "1",
+        # phone login needs MSG91 and the Supabase SMS hook; locally it works with code 123456
+        "phone_login": mode() == "local" or bool(os.getenv("MSG91_AUTH_KEY") and os.getenv("MSG91_TEMPLATE_ID")
+                                                    and os.getenv("SEND_SMS_HOOK_SECRET")),
     }
 
 
@@ -73,9 +76,11 @@ def verify_supabase_token(token):
         return None
     data = r.json()
     meta = data.get("user_metadata") or {}
+    phone = "".join(ch for ch in (data.get("phone") or "") if ch.isdigit())
     return {
         "id": data["id"],
         "email": (data.get("email") or "").lower(),
+        "phone": ("+" + phone) if phone else "",
         "name": meta.get("full_name") or meta.get("name") or "",
     }
 
@@ -93,12 +98,13 @@ def is_admin(user=None):
         # Locally, with no ADMIN_EMAILS set, whoever signs in can open the
         # admin panel so you can test it. In production you must list admins.
         return mode() == "local"
-    return user.get("email", "").lower() in admins
+    return (user.get("email") or "").lower() in admins
 
 
 def sign_in(user):
     session.clear()
-    session["user"] = {"id": user["id"], "email": user.get("email", ""), "name": user.get("name", "")}
+    session["user"] = {"id": user["id"], "email": user.get("email", ""), "phone": user.get("phone", ""),
+                       "name": user.get("name", "")}
     session.permanent = True
 
 
@@ -110,10 +116,10 @@ def current_user():
     return session.get("user")
 
 
-def local_user_id(email):
-    """Stable id for local test mode, derived from the email."""
+def local_user_id(identity):
+    """Stable id for local test mode, derived from the email or phone number."""
     import hashlib
-    return "local_" + hashlib.sha256(email.lower().encode()).hexdigest()[:20]
+    return "local_" + hashlib.sha256(identity.lower().encode()).hexdigest()[:20]
 
 
 def login_required(view):

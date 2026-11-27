@@ -207,25 +207,59 @@ def auth_session():
         user = auth.verify_supabase_token(payload.get("access_token"))
         if not user:
             return jsonify({"error": "That sign-in has expired. Please sign in again."}), 401
-    else:  # local test mode
+    else:  # local test mode: any email, or a phone with the test code 123456
+        from core import sms
         email = (payload.get("email") or "").strip().lower()
-        if "@" not in email or len(email) > 120:
+        mobile = sms.indian_mobile(payload.get("phone"))
+        if mobile:
+            if str(payload.get("code") or "") != "123456":
+                return jsonify({"error": "That code isn't right. Check the SMS and try again."}), 400
+            user = {"id": auth.local_user_id("+" + mobile), "email": "", "phone": "+" + mobile, "name": ""}
+        elif "@" not in email or len(email) > 120:
             return jsonify({"error": "Enter a valid email address."}), 400
-        user = {"id": auth.local_user_id(email), "email": email, "name": (payload.get("name") or "").strip()[:60]}
+        else:
+            user = {"id": auth.local_user_id(email), "email": email, "name": (payload.get("name") or "").strip()[:60]}
 
     store, err = store_or_error()
     if err:
         return err
     existing = store.get_profile(user["id"])
-    fields = {"email": user["email"]}
+    fields = {}
+    if user.get("email"):
+        fields["email"] = user["email"]
+    if user.get("phone") and not (existing or {}).get("phone"):
+        fields["phone"] = user["phone"]   # signed in with this number, so it's verified
     if user.get("name") and not (existing or {}).get("name"):
         fields["name"] = user["name"]
     store.upsert_profile(user["id"], fields)
     auth.sign_in(user)
     if not auth.is_admin(user):
-        log(store, "signed_in" if existing else "signed_up", user["email"], uid=user["id"])
+        log(store, "signed_in" if existing else "signed_up", user.get("email") or user.get("phone") or "", uid=user["id"])
     nxt = payload.get("next") or ""
     return jsonify({"ok": True, "next": nxt if nxt.startswith("/") and not nxt.startswith("//") else "/app"})
+
+
+@bp.route("/api/hooks/send-sms", methods=["POST"])
+def send_sms_hook():
+    """Supabase calls this with each login code; we deliver it by SMS through MSG91."""
+    from core import sms
+    body = request.get_data()
+    try:
+        sms.verify_hook(body, request.headers)
+    except sms.SmsError as exc:
+        print("[sms hook] rejected:", exc)
+        return jsonify({"error": {"http_code": 401, "message": "Not allowed."}}), 401
+    data = request.get_json(silent=True) or {}
+    phone = ((data.get("user") or {}).get("phone")) or ""
+    otp = (data.get("sms") or {}).get("otp")
+    if limits.too_fast("sms:" + phone, 5, 3600):
+        return jsonify({"error": {"http_code": 429, "message": "Too many codes for this number. Try again in an hour."}}), 429
+    try:
+        sms.send_otp(phone, otp)
+    except sms.SmsError as exc:
+        print("[sms hook] send failed:", exc)
+        return jsonify({"error": {"http_code": 500, "message": "Couldn't send the code. Try again in a minute."}}), 500
+    return jsonify({})
 
 
 @bp.route("/auth/logout", methods=["POST"])

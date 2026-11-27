@@ -83,7 +83,12 @@
     var digits = v.replace(/[\s-]/g, "");
     var isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
     var isPhone = /^(\+91)?[6-9]\d{9}$/.test(digits);
-    if (isPhone) { $("id-err").textContent = "Phone sign-in is coming soon. For now, please use your email."; return; }
+    if (isPhone) {
+      if (!CFG.phone_login) { $("id-err").textContent = "Phone sign-in is coming soon. For now, please use your email."; return; }
+      $("id-err").textContent = "";
+      startPhone("+91" + digits.slice(-10));
+      return;
+    }
     if (!isEmail) { $("id-err").textContent = "Enter a valid email address."; return; }
     $("id-err").textContent = "";
     userId = v.toLowerCase();
@@ -111,6 +116,70 @@
     var p = $("pass-input");
     p.type = p.type === "password" ? "text" : "password";
     this.textContent = p.type === "password" ? "Show" : "Hide";
+  });
+
+  // ---- phone login: Supabase sends a 6-digit code by SMS (through MSG91)
+  var otpPhone = "", resendTimer = null;
+  function nicePhoneNo(p) { var d = p.replace(/\D/g, "").slice(-10); return "+91 " + d.slice(0, 5) + " " + d.slice(5); }
+  function countdown() {
+    var left = 30, b = $("otp-resend"); b.disabled = true;
+    clearInterval(resendTimer);
+    b.textContent = "Resend code in 30s";
+    resendTimer = setInterval(function () {
+      left -= 1;
+      if (left <= 0) { clearInterval(resendTimer); b.disabled = false; b.textContent = "Resend code"; }
+      else b.textContent = "Resend code in " + left + "s";
+    }, 1000);
+  }
+  function sendCode(phone) {
+    if (!sb) return Promise.resolve();   // local test mode: the code is 123456
+    return sb.auth.signInWithOtp({ phone: phone }).then(function (res) {
+      if (res.error) {
+        var m = res.error.message || "";
+        if (/rate|seconds|too many/i.test(m)) throw new Error("Please wait a minute before asking for another code.");
+        throw new Error("Couldn't send the code. Check the number, or sign in with email.");
+      }
+    });
+  }
+  function startPhone(phone) {
+    var btn = $("id-form").querySelector(".btn-main"); busy(btn, true);
+    sendCode(phone).then(function () {
+      otpPhone = phone;
+      $("otp-who").textContent = nicePhoneNo(phone);
+      $("otp-input").value = ""; $("otp-err").textContent = "";
+      show("screen-otp"); $("otp-input").focus(); countdown();
+    }).catch(function (err) { $("id-err").textContent = err.message; })
+      .finally(function () { busy(btn, false); });
+  }
+  $("otp-input").addEventListener("input", function () {
+    this.value = this.value.replace(/\D/g, "").slice(0, 6);
+    if (this.value.length === 6) $("otp-form").requestSubmit();
+  });
+  $("otp-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var code = $("otp-input").value;
+    if (!/^\d{6}$/.test(code)) { $("otp-err").textContent = "Enter the 6-digit code from the SMS."; return; }
+    var btn = $("otp-btn"); busy(btn, true); $("otp-err").textContent = "";
+    var p = !sb
+      ? startSession({ phone: otpPhone, code: code })
+      : sb.auth.verifyOtp({ phone: otpPhone, token: code, type: "sms" }).then(function (res) {
+          if (res.error) {
+            var m = res.error.message || "";
+            throw new Error(/expired/i.test(m) ? "That code has expired. Tap Resend code." : "That code isn't right. Check the SMS and try again.");
+          }
+          return startSession({ access_token: res.data.session.access_token });
+        });
+    p.then(function () { clearInterval(resendTimer); })
+      .catch(function (err) { $("otp-err").textContent = err.message; $("otp-input").select(); })
+      .finally(function () { busy(btn, false); });
+  });
+  $("otp-resend").addEventListener("click", function () {
+    var b = this; b.disabled = true;
+    sendCode(otpPhone).then(function () { toast("New code sent."); countdown(); })
+      .catch(function (err) { $("otp-err").textContent = err.message; b.disabled = false; });
+  });
+  $("otp-change").addEventListener("click", function () {
+    clearInterval(resendTimer); history_ = ["screen-id"]; show("screen-id"); $("id-input").select();
   });
 
   function startSession(body) {
