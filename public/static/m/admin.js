@@ -38,6 +38,13 @@
     return "https://wa.me/" + d + "?text=" + encodeURIComponent(msg);
   }
   function scoreClass(v) { return !v ? "" : v >= 700 ? "good" : v >= 650 ? "ok" : "low"; }
+  function nicePhone(p) {
+    var d = String(p || "").replace(/\D/g, "");
+    if (d.length === 12 && d.indexOf("91") === 0) return "+91 " + d.slice(2, 7) + " " + d.slice(7);
+    if (d.length === 10) return "+91 " + d.slice(0, 5) + " " + d.slice(5);
+    return p || "";
+  }
+
   function quickActions(phone, name) {
     var box = el("span", "qa");
     if (!phone) return box;
@@ -109,7 +116,10 @@
       var line = reqLine(r); if (line) b.appendChild(el("p", "ad-req-line", line));
       if (r.details && r.details.note) b.appendChild(el("p", "ad-req-line", "“" + r.details.note + "”"));
       var foot = el("div", "ad-req-foot");
-      foot.appendChild(el("span", "ad-when", ago(r.created_at) + (r.customer_phone ? " · " + r.customer_phone : "")));
+      var meta = el("span", "ad-when");
+      meta.appendChild(el("b", null, ago(r.created_at)));
+      if (r.customer_phone) meta.appendChild(el("span", null, nicePhone(r.customer_phone)));
+      foot.appendChild(meta);
       foot.appendChild(quickActions(r.customer_phone, r.customer_name));
       b.appendChild(foot);
       b.addEventListener("click", function () { openReq(r); });
@@ -278,19 +288,36 @@
     $("ad-cust-count").textContent = CUSTS.length ? CUSTS.length + " total" : "";
     rows.forEach(function (c) {
       var li = el("li");
-      var b = el("button", "ad-cust"); b.type = "button";
-      b.appendChild(el("span", "ad-av", (c.name || c.email || "?").trim()[0].toUpperCase()));
-      var body = el("span", "ad-cust-body");
-      var nm = el("b", null, c.name || c.email || "No name");
-      if (c.open_requests) nm.appendChild(el("span", "open-tag", c.open_requests + " open"));
-      body.appendChild(nm);
-      body.appendChild(el("span", null, [c.employer, c.phone || c.email].filter(Boolean).join(" · ") || "No details yet"));
-      body.appendChild(el("span", null, c.loans + " loan" + (c.loans === 1 ? "" : "s") + (c.total_outstanding ? " · " + inr(c.total_outstanding) + " left" : "") + " · " + (c.last_seen ? ago(c.last_seen) : "")));
-      b.appendChild(body);
-      var right = el("span", "ad-cust-right");
-      right.appendChild(el("span", "sc " + scoreClass(c.cibil_score), c.cibil_score ? String(c.cibil_score) : "—"));
-      b.appendChild(right);
-      b.addEventListener("click", function () { openCustomer(c.user_id); });
+      var b = el("div", "ad-ccard"); b.setAttribute("role", "button"); b.tabIndex = 0;
+      var top = el("div", "acc-top");
+      top.appendChild(el("span", "ad-av", (c.name || c.email || "?").trim()[0].toUpperCase()));
+      var who = el("div", "acc-who");
+      who.appendChild(el("b", null, c.name || c.email || "No name"));
+      who.appendChild(el("span", null, c.employer || "Company not added"));
+      top.appendChild(who);
+      var sc = el("div", "acc-score " + scoreClass(c.cibil_score));
+      sc.appendChild(el("b", null, c.cibil_score ? String(c.cibil_score) : "—"));
+      sc.appendChild(el("span", null, "CIBIL"));
+      top.appendChild(sc);
+      b.appendChild(top);
+
+      var figs = el("div", "acc-figs");
+      [["Loans", String(c.loans || 0)], ["Owes", c.total_outstanding ? inr(c.total_outstanding) : "—"], ["EMI / month", c.total_emi ? inr(c.total_emi) : "—"]]
+        .forEach(function (f) { var d = el("div"); d.appendChild(el("span", null, f[0])); d.appendChild(el("b", null, f[1])); figs.appendChild(d); });
+      b.appendChild(figs);
+
+      var foot = el("div", "acc-foot");
+      var meta = el("div", "acc-meta");
+      if (c.open_requests) meta.appendChild(el("span", "open-tag", c.open_requests + " open request" + (c.open_requests === 1 ? "" : "s")));
+      meta.appendChild(el("span", null, c.phone ? nicePhone(c.phone) : (c.email || "")));
+      meta.appendChild(el("span", "acc-seen", c.last_seen ? "Active " + ago(c.last_seen) : ""));
+      foot.appendChild(meta);
+      foot.appendChild(quickActions(c.phone, c.name));
+      b.appendChild(foot);
+
+      var open = function () { openCustomer(c.user_id); };
+      b.addEventListener("click", open);
+      b.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
       li.appendChild(b); ul.appendChild(li);
     });
   }
