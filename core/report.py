@@ -221,36 +221,66 @@ def _gemini_text(pdf_bytes):
     raise ReportError("Couldn't read your report just now. Try again in a minute, or type your score.")
 
 
+def _claude_text(pdf_bytes):
+    """Claude reads the report: its text when the PDF has a text layer, otherwise the PDF."""
+    model = os.getenv("CLAUDE_REPORT_MODEL") or os.getenv("CLAUDE_MODEL") or "claude-sonnet-5-5"
+    text = pdf_text(pdf_bytes)
+    if text:
+        content = [{"type": "text", "text": PROMPT + "\n\nREPORT TEXT:\n" + text[:180000]}]
+    else:
+        content = [{"type": "document", "source": {"type": "base64", "media_type": "application/pdf",
+                                                   "data": base64.b64encode(pdf_bytes).decode("ascii")}},
+                   {"type": "text", "text": PROMPT}]
+    try:
+        r = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01",
+                     "content-type": "application/json"},
+            json={"model": model, "max_tokens": 6000, "temperature": 0,
+                  "messages": [{"role": "user", "content": content}]},
+            timeout=45,
+        )
+    except requests.Timeout:
+        LAST_FAILURE["detail"] = f"{model}: timed out"
+        raise ReportError("Couldn't read your report just now. Try again in a minute, or type your score.")
+    except requests.RequestException as exc:
+        LAST_FAILURE["detail"] = f"{model}: {type(exc).__name__}"
+        raise ReportError("Couldn't read your report just now. Try again in a minute, or type your score.")
+    if r.status_code >= 400:
+        msg = ""
+        try:
+            msg = r.json().get("error", {}).get("message", "")
+        except ValueError:
+            pass
+        LAST_FAILURE["detail"] = f"{model}: {r.status_code} {msg[:150]}"
+        print("[report] claude failed:", LAST_FAILURE["detail"])
+        raise ReportError("Couldn't read your report just now. Try again in a minute, or type your score.")
+    data = r.json()
+    out = "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text")
+    if not out.strip():
+        LAST_FAILURE["detail"] = f"{model}: no text ({data.get('stop_reason', '?')})"
+        raise ReportError("Couldn't read your report just now. Try again in a minute, or type your score.")
+    return out
+
+
 def read(pdf_bytes):
     which = reader()
     if not which:
         raise ReportError("Reading reports isn't switched on yet. Type your score instead.")
     if which == "gemini":
         return _parse(_gemini_text(pdf_bytes))
-    model = os.getenv("CLAUDE_REPORT_MODEL") or os.getenv("CLAUDE_MODEL") or "claude-sonnet-5-5"
     try:
-        r = requests.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={"x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01",
-                     "content-type": "application/json"},
-            json={
-                "model": model, "max_tokens": 2000, "temperature": 0,
-                "messages": [{"role": "user", "content": [
-                    {"type": "document", "source": {"type": "base64", "media_type": "application/pdf",
-                                                    "data": base64.b64encode(pdf_bytes).decode("ascii")}},
-                    {"type": "text", "text": PROMPT},
-                ]}],
-            },
-            timeout=55,
-        )
-    except requests.RequestException:
-        raise ReportError("Couldn't read the report just now. Try again in a minute.")
-    if r.status_code == 429:
-        raise ReportError("Lots of reports are being read right now. Try again in a minute.")
-    if r.status_code >= 400:
-        raise ReportError(f"Couldn't read the report ({r.status_code}). Type your score instead.")
-    text = "".join(b.get("text", "") for b in r.json().get("content", []) if b.get("type") == "text")
-    return _parse(text)
+        return _parse(_claude_text(pdf_bytes))
+    except ReportError:
+        # Claude is down or busy: let Gemini try, if it's set up
+        if os.getenv("GEMINI_API_KEY") and (os.getenv("REPORT_AI") or "").lower() == "gemini":
+            first = LAST_FAILURE["detail"]
+            try:
+                return _parse(_gemini_text(pdf_bytes))
+            except ReportError:
+                LAST_FAILURE["detail"] = f"Claude: {first} | Gemini: {LAST_FAILURE['detail']}"
+                raise
+        raise
 
 
 def _parse(text):
