@@ -459,34 +459,47 @@
   var LOAN_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3.5" y="6.5" width="17" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
   var CHEVRON = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   // Bank logos: each lender's own website icon, with the initials as a fallback.
+  // Banks moved to ".bank.in" addresses in Oct 2025 (RBI rule), so try that first.
   var LENDER_SITES = [
-    ["state bank of india", "sbi.co.in"], ["sbi", "sbi.co.in"], ["union bank of india", "unionbankofindia.co.in"],
-    ["punjab national", "pnbindia.in"], ["pnb", "pnbindia.in"], ["bank of baroda", "bankofbaroda.in"],
-    ["bank of india", "bankofindia.co.in"], ["canara", "canarabank.com"], ["federal bank", "federalbank.co.in"],
-    ["hdb financial", "hdbfs.com"], ["hdfc", "hdfcbank.com"], ["icici", "icicibank.com"], ["idbi", "idbibank.in"],
-    ["idfc", "idfcfirstbank.com"], ["indusind", "indusind.com"], ["kotak", "kotak.com"], ["axis", "axisbank.com"],
-    ["yes bank", "yesbank.in"], ["aditya birla", "adityabirlacapital.com"], ["bajaj", "bajajfinserv.in"],
-    ["l&t", "ltfs.com"], ["lic housing", "lichousing.com"], ["manappuram", "manappuram.com"],
-    ["muthoot", "muthootfinance.com"], ["piramal", "piramalfinance.com"], ["poonawalla", "poonawallafincorp.com"],
-    ["tata capital", "tatacapital.com"], ["au small finance", "au.bank.in"], ["bandhan", "bandhanbank.com"],
-    ["rbl", "rblbank.com"], ["standard chartered", "sc.com"], ["hsbc", "hsbc.co.in"], ["dbs", "dbs.com"],
-    ["indian bank", "indianbank.in"], ["indian overseas", "iob.in"], ["central bank of india", "centralbankofindia.co.in"],
+    ["state bank of india", "sbi.bank.in sbi.co.in"], ["sbi", "sbi.bank.in sbi.co.in"],
+    ["union bank of india", "unionbankofindia.bank.in unionbankofindia.co.in"],
+    ["punjab national", "pnb.bank.in pnbindia.in"], ["pnb", "pnb.bank.in pnbindia.in"],
+    ["bank of baroda", "bankofbaroda.bank.in bankofbaroda.in"], ["bank of india", "bankofindia.bank.in bankofindia.co.in"],
+    ["canara", "canarabank.bank.in canarabank.com"], ["federal bank", "federal.bank.in federalbank.co.in"],
+    ["hdb financial", "hdbfs.com"], ["hdfc", "hdfc.bank.in hdfcbank.com"], ["icici", "icici.bank.in icicibank.com"],
+    ["idbi", "idbi.bank.in idbibank.in"], ["idfc", "idfcfirst.bank.in idfcfirstbank.com"],
+    ["indusind", "indusind.bank.in indusind.com"], ["kotak", "kotak.bank.in kotak.com"], ["axis", "axis.bank.in axisbank.com"],
+    ["yes bank", "yes.bank.in yesbank.in"], ["rbl", "rbl.bank.in rblbank.com"], ["indian bank", "indianbank.bank.in indianbank.in"],
+    ["indian overseas", "iob.bank.in iob.in"], ["central bank of india", "centralbank.bank.in centralbankofindia.co.in"],
+    ["au small finance", "au.bank.in aubank.in"], ["bandhan", "bandhan.bank.in bandhanbank.com"],
+    ["standard chartered", "sc.com"], ["hsbc", "hsbc.co.in"], ["dbs", "dbs.com"],
+    ["aditya birla", "adityabirlacapital.com"], ["bajaj", "bajajfinserv.in bajajfinance.in"], ["l&t", "ltfs.com"],
+    ["lic housing", "lichousing.com"], ["manappuram", "manappuram.com"], ["muthoot", "muthootfinance.com"],
+    ["piramal", "piramalfinance.com"], ["poonawalla", "poonawallafincorp.com"], ["tata capital", "tatacapital.com"],
     ["shriram", "shriramfinance.in"], ["cholamandalam", "cholamandalam.com"], ["mahindra finance", "mahindrafinance.com"],
-    ["fullerton", "smfgindiacredit.com"], ["smfg", "smfgindiacredit.com"], ["incred", "incred.com"]
+    ["fullerton", "smfgindiacredit.com"], ["smfg", "smfgindiacredit.com"], ["incred", "incred.com"],
+    ["hero fincorp", "herofincorp.com"]
   ];
-  function lenderSite(name) {
+  function lenderSites(name) {
     var n = (name || "").toLowerCase(), best = null;
     LENDER_SITES.forEach(function (p) { if (n.indexOf(p[0]) !== -1 && (!best || p[0].length > best[0].length)) best = p; });
-    return best && best[1];
+    return best ? best[1].split(" ") : [];
   }
   function lenderMark(name, extraClass) {
     var m = el("span", "lender-mark" + (extraClass ? " " + extraClass : ""), initials(name));
-    var site = lenderSite(name);
-    if (site) {
+    var urls = [];
+    lenderSites(name).forEach(function (d) { urls.push("https://www.google.com/s2/favicons?sz=128&domain=" + d); });
+    lenderSites(name).forEach(function (d) { urls.push("https://icons.duckduckgo.com/ip3/" + d + ".ico"); });
+    (function next(i) {
+      if (i >= urls.length) return;   // nothing worked: keep the letters
       var img = new Image(); img.alt = ""; img.decoding = "async";
-      img.onload = function () { if (img.naturalWidth > 16) { m.textContent = ""; m.classList.add("has-logo"); m.appendChild(img); } };
-      img.src = "https://www.google.com/s2/favicons?sz=128&domain=" + site;
-    }
+      img.onload = function () {
+        if (img.naturalWidth > 16) { m.textContent = ""; m.classList.add("has-logo"); m.appendChild(img); }
+        else next(i + 1);   // tiny generic globe: try the next source
+      };
+      img.onerror = function () { next(i + 1); };
+      img.src = urls[i];
+    })(0);
     return m;
   }
 
